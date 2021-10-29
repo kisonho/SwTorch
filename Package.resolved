@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "PythonKit",
+        "repositoryURL": "https://github.com/pvieito/PythonKit.git",
+        "state": {
+          "branch": "master",
+          "revision": "86ce684b005aee7cea847568c6ab82079794f29b",
+          "version": null
+        }
+      }
+    ]
+  },
+  "version": 1
+}
