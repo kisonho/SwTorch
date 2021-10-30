@@ -17,12 +17,15 @@ public protocol EvaluatingManager {
     
     var useMultiGPUs: Bool { get }
     var device: Device { get }
-    var lossFn: PythonObject { get }
     var model: ModuleType { get set }
     
     /// calculate metrics
-    /// - Returns: A Dictionary of metrics
+    /// - Returns: A `Dictionary` of metrics
     func calculateMetrics(yTrue: Tensor, yPred: Tensor) -> [String: Float]
+    
+    /// calculate loss
+    /// - Returns: A `Tensor` of loss
+    func calculateLoss(yTrue: Tensor, yPred: Tensor) -> Tensor
     
     /// On every batch ends
     func onBatchEnd(batch: Int, result: [String: Float])
@@ -83,7 +86,7 @@ public extension EvaluatingManager {
         
         // forward pass
         let y = model(xTest)
-        let loss = lossFn(y, yTest)
+        let loss = calculateLoss(yTrue: yTest, yPred: y)
         var metrics = calculateMetrics(yTrue: yTest, yPred: y)
         metrics["loss"] = Float(loss.mean())!
         
@@ -94,8 +97,10 @@ public extension EvaluatingManager {
 
 /// Main Training Protocol
 public protocol TrainingManager: EvaluatingManager {
+    associatedtype OptimizerType: Optimizer
+    
     var lrScheduler: PythonObject? { get set }
-    var optimizer: PythonObject { get }
+    var optimizer: Optimizer { get }
     
     /// On every epoch starts
     func onEpochStart(epoch: Int, totalEpochs: Int)
@@ -109,7 +114,7 @@ public extension TrainingManager {
     /// Backward pass
     /// - Parameters:
     ///   - loss: A torch.Tensor of loss
-    func backward(_ loss: PythonObject) {
+    func backward(_ loss: Tensor) {
         loss.backward()
         optimizer.step()
     }
@@ -189,7 +194,7 @@ public extension TrainingManager {
         // forward pass
         optimizer.zero_grad()
         let y = model(xTrain)
-        let loss = lossFn(y, yTrain)
+        let loss = calculateLoss(yTrue: yTrain, yPred: y)
         var metrics = calculateMetrics(yTrue: yTrain, yPred: y)
         metrics["loss"] = Float(loss.mean())!
         
