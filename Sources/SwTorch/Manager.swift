@@ -8,15 +8,20 @@
 import PythonKit
 
 /// import required modules
-let np = Python.import("numpy")
 public let torch = Python.import("torch")
 
 /// Main Validation Protocol
 public protocol EvaluatingManager {
+    /// The type of model
     associatedtype ModuleType: Module
     
+    /// Flag of if multiple GPUs will be used for the model
     var useMultiGPUs: Bool { get }
+    
+    /// The target device of model
     var device: Device { get }
+    
+    /// The real model to run
     var model: ModuleType { get set }
     
     /// calculate metrics
@@ -37,7 +42,7 @@ public extension EvaluatingManager {
     /// - Returns: A Dictionary of validation results
     func validate(_ dataLoader: PythonObject) throws -> [String: Float] {
         // no gradients
-        let valResultList = try with(torch.no_grad()) {
+        let valResultList = try with(torch.no_grad()) { _ in
             // initialize validation
             var resultList: [String: Array<Float>] = [:]
             
@@ -97,10 +102,16 @@ public extension EvaluatingManager {
 
 /// Main Training Protocol
 public protocol TrainingManager: EvaluatingManager {
+    /// The learning rate scheduler type
     associatedtype LrSchedulerType: LrScheduler
+    
+    /// The optimizer type
     associatedtype OptimizerType: Optimizer
     
+    /// The learning rate schedule which updates the learning rate in optimizer
     var lrScheduler: LrSchedulerType? { get set }
+    
+    /// The optimizer to update model
     var optimizer: OptimizerType { get }
     
     /// On every epoch starts
@@ -203,15 +214,4 @@ public extension TrainingManager {
         backward(loss)
         return metrics
     }
-}
-
-/// With like statement for python objects
-/// - Parameters:
-///   - obj: PythonObject that accept with statement
-///   - fn: function to call
-public func with(_ obj: PythonObject, fn: () throws -> Any) throws -> Any {
-    // enter
-    obj.__enter__()
-    defer { obj.__exit__() }
-    return try fn()
 }

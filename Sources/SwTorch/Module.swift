@@ -6,24 +6,42 @@
 //
 
 import PythonKit
+import Foundation
 
 /// Main module protocol
 public protocol Module: DeviceMovable {
-    var parameters: Array<Tensor> { get }
-    
     /// Main forward function
-    /// - Returns: A Tensor of output
+    /// - Parameter x: A `Tensor` of input
+    /// - Returns: A `Tensor` of output
     func forward(_ x: Tensor) -> Tensor
     
-    /// Load saved state dict to target module
+    /// Load state dict from saved module
+    /// - Parameter file: A String of saved module path
     func loadStateDict<DictValueType: PythonConvertible>(_ dict: [String: DictValueType])
     
     /// Save current model
-    func save(_ file: String)
+    /// - Parameter file: A `String` of file path to be saved
+    func save(_ file: URL)
 }
 
 extension Module {
-    /// Main call function
+    /// Automatically get all parameters
+    var parameters: Array<Tensor> { get {
+        // initialize mirror
+        let mirror = Mirror(reflecting: self)
+        var params = Array<Tensor>()
+        
+        // loop for attributes
+        for attr in mirror.children {
+            if let param = attr.value as? Tensor {
+                params.append(param)
+            }
+        }
+        
+        return params
+    } }
+    
+    /// Main forward pass function
     /// - Parameter x: A Tensor of input
     /// - Returns: A Tensor of output
     public func callAsFunction(_ x: Tensor) -> Tensor {
@@ -32,46 +50,41 @@ extension Module {
 }
 
 /// Main PyTorch Module
-public struct PyModule: Module {
+public struct PyModule: ConvertibleFromPython, Module {
     /// The torch.nn.Module python object
     var modulePtr: PythonObject
     
     public var parameters: Array<Tensor> { get {
-        return Array(self.modulePtr.parameters())!
-    } }
+        // initialize getting parameters
+        let pyParams = self.modulePtr.parameters()
+        var params = Array<Tensor>()
+        
+        // loop for each param
+        for pyParam in pyParams {
+            params.append(Tensor(pyParam))
+        }
+        
+        return params
+    }}
     
-    /// Main forward function that forward the target torch.nn.Module
-    /// - Parameter x: A Tensor of input
-    /// - Returns: A Tensor of output
+    public init?(_ object: PythonObject) {
+        modulePtr = object
+    }
+    
     public func forward(_ x: Tensor) -> Tensor {
         return Tensor(modulePtr(x))!
     }
     
-    /// Load state dict from saved module
-    /// - Parameter file: A String of saved module path
     public func loadStateDict<DictValueType: PythonConvertible>(_ dict: [String: DictValueType]) {
         self.modulePtr.loadStateDict(dict)
     }
     
-    /// Move current module to a target device
-    /// - Parameter device: A String of device
-    public func to(_ device: Device) {
-        self.modulePtr.to(torch.device(device.rawValue))
+    public func save(_ file: URL) {
+        torch.save(modulePtr, file.absoluteString)
     }
     
-    /// Save current python module to a file
-    /// - Parameter file: A String of file location
-    public func save(_ file: String) {
-        torch.save(self.modulePtr, file)
-    }
-}
-
-extension PyModule: ConvertibleFromPython {
-    /// Constructor
-    /// - Parameters:
-    ///   - object: The python object in `torch.nn.Module` that convert from
-    public init?(_ object: PythonObject) {
-        modulePtr = object
+    public func to(_ device: Device) {
+        self.modulePtr.to(torch.device(device.rawValue))
     }
 }
 
@@ -80,3 +93,45 @@ extension PyModule: PythonConvertible {
         return modulePtr
     }
 }
+
+public struct Sequential: Module {
+    /// The modules list
+    var modules: Array<Module> = []
+    
+    public func forward(_ x: Tensor) -> Tensor {
+        // initialize input
+        var x = x
+        
+        // loop for modules
+        for m in modules {
+            x = m(x)
+        }
+        
+        return x
+    }
+    
+    public func loadStateDict<DictValueType>(_ dict: [String : DictValueType]) where DictValueType : PythonConvertible {
+        // loop for modules
+        for (i, m) in modules.enumerated() {
+            m.loadStateDict(dict[String(i)] as! [String: DictValueType])
+        }
+    }
+    
+    public func save(_ file: URL) {
+        // loop for modules
+        for (i, module) in modules.enumerated() {
+            var moduleFile = file
+            moduleFile.appendPathComponent(String(i))
+            module.save(moduleFile)
+        }
+    }
+    
+    public func to(_ device: Device) {
+        // loop for modules
+        for m in modules {
+            m.to(device)
+        }
+    }
+}
+
+

@@ -9,9 +9,13 @@ import PythonKit
 
 /// The protocol to update learning rate for each step
 public protocol LrScheduler {
+    /// The optimizer type
     associatedtype OptimizerType: Optimizer
     
+    /// Current learning rate
     var lr: Float { get set }
+    
+    /// The optimizer where learning rate is
     var optimizer: OptimizerType { get set }
     
     /// Update the learning rate for each step
@@ -32,10 +36,36 @@ extension LrScheduler {
     }
 }
 
+public struct ConstantLr<OptimizerType: Optimizer>: LrScheduler {
+    public var lr: Float
+    
+    public var optimizer: OptimizerType
+    
+    /// Constructor
+    /// - Parameters:
+    ///   - optimizer: The optimizer to be updated
+    ///   - lr: target learning rate
+    init(_ optimizer: OptimizerType, lr: Float) {
+        self.lr = lr
+        self.optimizer = optimizer
+    }
+    
+    public func updateLr() -> Float {
+        return lr
+    }
+    
+    mutating func step() {
+        return
+    }
+}
+
 /// Exponention learning rate scheduler
 public struct ExponentionLr<OptimizerType: Optimizer>: LrScheduler {
+    /// The exponential gamma
     var gamma: Float
+    
     public var lr: Float
+    
     public var optimizer: OptimizerType
     
     /// Constructor
@@ -49,8 +79,6 @@ public struct ExponentionLr<OptimizerType: Optimizer>: LrScheduler {
         self.optimizer = optimizer
     }
     
-    /// Update the learning rate for each step
-    /// - Returns: A `Float` of updated learning rate
     public func updateLr() -> Float {
         return lr * gamma
     }
@@ -70,7 +98,6 @@ public protocol Optimizer {
 
 /// A python optimizer
 public struct PyOptimizer: ConvertibleFromPython, Optimizer {
-    /// Parameter groups in an optimizer
     public var paramGroups: Array<[String : Float]> { get {
         return Array(optimizerPtr.param_groups)!
     } set(newGroups) {
@@ -82,18 +109,17 @@ public struct PyOptimizer: ConvertibleFromPython, Optimizer {
         }
     }}
     
+    /// The pointer of torch.optim.Optimizer
     var optimizerPtr: PythonObject
     
     public init?(_ object: PythonObject) {
         self.optimizerPtr = object
     }
     
-    /// Performs a single optimization step (parameter update)
     public func step() {
         self.optimizerPtr.step()
     }
     
-    /// performs a
     public func zeroGrad() {
         self.optimizerPtr.zero_grad()
     }
