@@ -9,9 +9,13 @@ import PythonKit
 
 /// The protocol to update learning rate for each step
 public protocol LrScheduler {
+    /// The optimizer type
     associatedtype OptimizerType: Optimizer
     
+    /// Current learning rate
     var lr: Float { get set }
+    
+    /// The optimizer where learning rate is
     var optimizer: OptimizerType { get set }
     
     /// Update the learning rate for each step
@@ -34,8 +38,13 @@ extension LrScheduler {
 
 /// Exponention learning rate scheduler
 public struct ExponentionLr<OptimizerType: Optimizer>: LrScheduler {
+    /// The exponential gamma
     var gamma: Float
+    
+    /// Current learning rate
     public var lr: Float
+    
+    /// The optimizer where learning rate is
     public var optimizer: OptimizerType
     
     /// Constructor

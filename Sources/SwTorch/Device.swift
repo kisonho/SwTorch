@@ -27,6 +27,9 @@ extension DeviceMovable {
 
 /// Available devices
 public enum Device: String {
+    /// cpu
     case cpu = "cpu"
+    
+    /// gpu
     case cuda = "cuda"
 }
