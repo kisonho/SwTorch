@@ -97,10 +97,11 @@ public extension EvaluatingManager {
 
 /// Main Training Protocol
 public protocol TrainingManager: EvaluatingManager {
+    associatedtype LrSchedulerType: LrScheduler
     associatedtype OptimizerType: Optimizer
     
-    var lrScheduler: PythonObject? { get set }
-    var optimizer: Optimizer { get }
+    var lrScheduler: LrSchedulerType? { get set }
+    var optimizer: OptimizerType { get }
     
     /// On every epoch starts
     func onEpochStart(epoch: Int, totalEpochs: Int)
@@ -126,7 +127,7 @@ public extension TrainingManager {
     ///   - initialEpoch: An Int of the starting epoch index
     ///   - validationDatasetLoader: An optional torch.utils.data.DataLoader to load validation dataset
     /// - Returns: An optional Dictionary of metrics (if validationDatasetLoader is not nil)
-    func train(trainingDatasetLoader: PythonObject, epochs: Int, initialEpoch: Int = 0, validationDatasetLoader: PythonObject? = nil) throws -> [String: Float]? {
+    mutating func train(trainingDatasetLoader: PythonObject, epochs: Int, initialEpoch: Int = 0, validationDatasetLoader: PythonObject? = nil) throws -> [String: Float]? {
         // initialize training
         var bestResult: [String: Float]? = nil
         
@@ -192,7 +193,7 @@ public extension TrainingManager {
     /// - Returns: A Dictionary of results
     func trainStep(_ xTrain: Tensor, _ yTrain: Tensor) -> [String: Float] {
         // forward pass
-        optimizer.zero_grad()
+        optimizer.zeroGrad()
         let y = model(xTrain)
         let loss = calculateLoss(yTrue: yTrain, yPred: y)
         var metrics = calculateMetrics(yTrue: yTrain, yPred: y)

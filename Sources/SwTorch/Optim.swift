@@ -7,39 +7,100 @@
 
 import PythonKit
 
-/// Main optimizer protocol
-public protocol Optimizer: PythonConvertible {
-    var optimizerPtr: PythonObject { get }
+/// The protocol to update learning rate for each step
+public protocol LrScheduler {
+    associatedtype OptimizerType: Optimizer
+    
+    var lr: Float { get set }
+    var optimizer: OptimizerType { get set }
+    
+    /// Update the learning rate for each step
+    /// - Returns: A `Float` of updated learning rate
+    func updateLr() -> Float
 }
 
-extension Optimizer {
+extension LrScheduler {
+    /// Call for each step
+    mutating func step() {
+        // get updated lr
+        lr = updateLr()
+        
+        // update lr in optimizer
+        for (i, _) in optimizer.paramGroups.enumerated() {
+            optimizer.paramGroups[i]["lr"] = lr
+        }
+    }
+}
+
+/// Exponention learning rate scheduler
+public struct ExponentionLr<OptimizerType: Optimizer>: LrScheduler {
+    var gamma: Float
+    public var lr: Float
+    public var optimizer: OptimizerType
+    
+    /// Constructor
+    /// - Parameters:
+    ///   - optimizer: An `OptimizerType` to be updated
+    ///   - gamma: A `Float` of exponention value
+    ///   - initialLr: A `Float` of initial learning rate
+    init(_ optimizer: OptimizerType, gamma: Float, initialLr: Float) {
+        self.gamma = gamma
+        self.lr = initialLr
+        self.optimizer = optimizer
+    }
+    
+    /// Update the learning rate for each step
+    /// - Returns: A `Float` of updated learning rate
+    public func updateLr() -> Float {
+        return lr * gamma
+    }
+}
+
+/// Main optimizer protocol
+public protocol Optimizer {
+    /// Parameter groups in an optimizer
+    var paramGroups: Array<[String: Float]> { get set }
+    
+    /// update parameters for one step
+    func step()
+    
+    /// Clear optimizer gradient
+    func zeroGrad()
+}
+
+/// A python optimizer
+public struct PyOptimizer: ConvertibleFromPython, Optimizer {
+    /// Parameter groups in an optimizer
+    public var paramGroups: Array<[String : Float]> { get {
+        return Array(optimizerPtr.param_groups)!
+    } set(newGroups) {
+        // loop for each group
+        for (i, group) in newGroups.enumerated() {
+            for (key, value) in group {
+                optimizerPtr.param_groups[i][key] = PythonObject(value)
+            }
+        }
+    }}
+    
+    var optimizerPtr: PythonObject
+    
+    public init?(_ object: PythonObject) {
+        self.optimizerPtr = object
+    }
+    
     /// Performs a single optimization step (parameter update)
-    func step() {
+    public func step() {
         self.optimizerPtr.step()
     }
     
     /// performs a
-    func zero_grad() {
+    public func zeroGrad() {
         self.optimizerPtr.zero_grad()
     }
 }
 
-/// Standard SGD optimizer
-public struct SGD: Optimizer {
-    public var optimizerPtr: PythonObject
-    public var pythonObject: PythonObject { get {
-        return optimizerPtr
-    }}
-    
-    /// Constructor
-    /// - Parameters:
-    ///   - params: An `Array<Tensor>` of parameters to be updated
-    ///   - lr: A `Float` of learning rate
-    ///   - momentum: A `Float` of momentum
-    ///   - dampening: A `Float` of dampening for momentum
-    ///   - weightDecay: A `Float` of L2 penalty
-    ///   - nesterov: A `Bool` flag to enable Nesterov Momentum
-    init(_ params: Array<Tensor>, lr: Float, momentum: Float = 0, dampening: Float = 0, weightDecay: Float = 0, nesterov: Bool = false) {
-        self.optimizerPtr = torch.optim.SGD(params, lr: lr, momentum: momentum, dampening: dampening, weight_decay: weightDecay, nesterov: nesterov)
+extension PyOptimizer: PythonConvertible {
+    public var pythonObject: PythonObject {
+        return self.optimizerPtr
     }
 }

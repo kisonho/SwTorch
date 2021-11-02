@@ -19,7 +19,7 @@ public struct Tensor: PythonConvertible {
     /// - Parameters:
     ///   - value: A PythonConvertible real value of the tensor
     ///   - shape:
-    public init(_ value: PythonConvertible) {
+    public init<ValueType: PythonConvertible>(_ value: ValueType) {
         self.tensorPtr = torch.Tensor(value)
     }
     
@@ -127,12 +127,14 @@ public extension Tensor {
 }
 
 extension Double {
+    /// Convert a `Tensor` to a `Double`
     public init?(_ tensor: Tensor) {
         self = Double(tensor.tensorPtr)!
     }
 }
 
 extension Float {
+    /// Convert a `Tensor` to a `Float`
     public init?(_ tensor: Tensor) {
         guard let v = Float(tensor.tensorPtr) else { return nil }
         self.init(v)
@@ -140,6 +142,7 @@ extension Float {
 }
 
 extension Int {
+    /// Convert a `Tensor` to an `Int`
     public init?(_ tensor: Tensor) {
         guard let v = Int(tensor.tensorPtr) else { return nil }
         self.init(v)

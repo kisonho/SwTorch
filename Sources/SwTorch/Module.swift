@@ -32,23 +32,13 @@ extension Module {
 }
 
 /// Main PyTorch Module
-public struct PyModule: ConvertibleFromPython, Module, PythonConvertible {
+public struct PyModule: Module {
     /// The torch.nn.Module python object
-    public var modulePtr: PythonObject { get {
-        return pythonObject
-    }}
+    var modulePtr: PythonObject
     
-    public var pythonObject: PythonObject
     public var parameters: Array<Tensor> { get {
-        return Array(self.pythonObject.parameters())!
+        return Array(self.modulePtr.parameters())!
     } }
-    
-    /// Constructor
-    /// - Parameters:
-    ///   - object: The python object in `torch.nn.Module` that convert from
-    public init?(_ object: PythonObject) {
-        pythonObject = object
-    }
     
     /// Main forward function that forward the target torch.nn.Module
     /// - Parameter x: A Tensor of input
@@ -73,5 +63,20 @@ public struct PyModule: ConvertibleFromPython, Module, PythonConvertible {
     /// - Parameter file: A String of file location
     public func save(_ file: String) {
         torch.save(self.modulePtr, file)
+    }
+}
+
+extension PyModule: ConvertibleFromPython {
+    /// Constructor
+    /// - Parameters:
+    ///   - object: The python object in `torch.nn.Module` that convert from
+    public init?(_ object: PythonObject) {
+        modulePtr = object
+    }
+}
+
+extension PyModule: PythonConvertible {
+    public var pythonObject: PythonObject {
+        return modulePtr
     }
 }
