@@ -124,22 +124,7 @@ extension Tensor: ConvertibleFromPython {
     }
 }
 
-extension Tensor: CustomStringConvertible {
-    /// A textual description of this `Tensor`
-    public var description: String {
-        return String(tensorPtr)!
-    }
-}
-
-extension Tensor: DeviceMovable {
-    /// Move current module to a target device
-    /// - Parameter device: A `String` of device
-    public func to(_ device: Device) {
-        self.tensorPtr.to(torch.device(device.rawValue))
-    }
-}
-
-extension Tensor: Equatable, Comparable {
+extension Tensor: Comparable, Equatable {
     public static func < (lhs: Tensor, rhs: Tensor) -> Bool {
         return lhs.tensorPtr < rhs.tensorPtr
     }
@@ -162,6 +147,18 @@ extension Tensor: Equatable, Comparable {
     
     public static func >= (lhs: Tensor, rhs: Tensor) -> Bool {
         return lhs.tensorPtr >= rhs.tensorPtr
+    }
+}
+
+extension Tensor: CustomStringConvertible {
+    public var description: String {
+        return String(tensorPtr)!
+    }
+}
+
+extension Tensor: DeviceMovable {
+    public func to(_ device: Device) {
+        self.tensorPtr.to(torch.device(device.rawValue))
     }
 }
 
@@ -220,6 +217,25 @@ extension Tensor: PythonConvertible {
     public var pythonObject: PythonObject { get {
         return self.tensorPtr
     }}
+}
+
+extension Tensor: Sequence {
+    public typealias Element = PythonObject
+    
+    public typealias Iterator = PythonObject.Iterator
+    
+    public func makeIterator() -> PythonObject.Iterator {
+        tensorPtr.makeIterator()
+    }
+}
+
+extension Array where Element: PythonConvertible {
+    public init?(_ tensor: Tensor) {
+        self = []
+        for t in tensor.tensorPtr {
+            append(t as! Element)
+        }
+    }
 }
 
 extension Double {
