@@ -112,8 +112,8 @@ extension Tensor: ConvertibleFromPython {
     
     /// calculate the mean
     /// - Returns: A `Tensor` of mean of current tensor
-    public func mean() -> Tensor {
-        return Tensor(self.tensorPtr.mean())!
+    public func mean(axis: Int? = nil) -> Tensor {
+        return Tensor(self.tensorPtr.mean(axis: axis))!
     }
     
     /// Cast current tensor to a target dtype
