@@ -77,7 +77,7 @@ public struct PyModule: ConvertibleFromPython, Module {
     }
     
     public func forward(_ x: Tensor) -> Tensor {
-        return Tensor(modulePtr(x))!
+        return Tensor(modulePtr(x))
     }
     
     public func loadStateDict<DictValueType: PythonConvertible>(_ dict: [String: DictValueType]) {
@@ -131,10 +131,10 @@ public struct Sequential: Module {
         }
     }
     
-    public func to(_ device: Device) {
+    public mutating func to(_ device: Device) {
         // loop for modules
-        for m in modules {
-            m.to(device)
+        for (i, _) in modules.enumerated() {
+            modules[i].to(device)
         }
     }
 }

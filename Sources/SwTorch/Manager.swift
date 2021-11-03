@@ -42,17 +42,21 @@ public extension EvaluatingManager {
     /// - Returns: A Dictionary of validation results
     func validate(_ dataLoader: PythonObject) throws -> [String: Float] {
         // no gradients
-        let valResultList = try with(torch.no_grad()) { _ in
+        var no_grad = NoGrad()
+        let valResultList: [String: Array<Float>] = try with(&no_grad) { _ in
             // initialize validation
             var resultList: [String: Array<Float>] = [:]
             
             // batch loop
             for (batch, example) in Array(dataLoader).enumerated() {
                 // extract example
-                let (xTest, yTest) = example.tuple2
+                var xTest = Tensor(example.tuple2.0)
+                var yTest = Tensor(example.tuple2.1)
+                if useMultiGPUs != true { xTest.to(device) }
+                yTest.to(device)
                 
                 // train step
-                let result = valStep(Tensor(xTest), Tensor(yTest))
+                let result = valStep(xTest, yTest)
                 onBatchEnd(batch: batch, result: result)
                 
                 // append to list
@@ -66,13 +70,13 @@ public extension EvaluatingManager {
             }
             
             return resultList
-        }
+        } as! [String : Array<Float>]
     
         // initialize val result
         var valResult: [String: Float] = [:]
         
         // calculate mean
-        for (key, m) in valResultList as! [String: Array<Float>] {
+        for (key, m) in valResultList {
             valResult[key] = Float(torch.Tensor(m).mean())!
         }
         
@@ -85,15 +89,11 @@ public extension EvaluatingManager {
     ///   - label: A torch.Tensor for label
     /// - Returns: A Dictionary of result of validation
     func valStep(_ xTest: Tensor, _ yTest: Tensor) -> [String: Float] {
-        // move data to GPU
-        if useMultiGPUs != true { xTest.to(device) }
-        yTest.to(device)
-        
         // forward pass
         let y = model(xTest)
         let loss = calculateLoss(yTrue: yTest, yPred: y)
         var metrics = calculateMetrics(yTrue: yTest, yPred: y)
-        metrics["loss"] = Float(loss.mean())!
+        metrics["loss"] = Float(loss)!
         
         // backward pass
         return metrics
@@ -151,8 +151,8 @@ public extension TrainingManager {
             // batch loop
             for (batch, example) in Array(trainingDatasetLoader).enumerated() {
                 // extract example
-                let xTrain = Tensor(example.tuple2.0)!
-                let yTrain = Tensor(example.tuple2.1)!
+                var xTrain = Tensor(example.tuple2.0)
+                var yTrain = Tensor(example.tuple2.1)
                 if useMultiGPUs != true { xTrain.to(device) }
                 yTrain.to(device)
                 
@@ -208,7 +208,7 @@ public extension TrainingManager {
         let y = model(xTrain)
         let loss = calculateLoss(yTrue: yTrain, yPred: y)
         var metrics = calculateMetrics(yTrue: yTrain, yPred: y)
-        metrics["loss"] = Float(loss.mean())!
+        metrics["loss"] = Float(loss)!
         
         // backward pass
         backward(loss)

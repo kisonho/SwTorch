@@ -48,7 +48,7 @@ public enum DType {
     /// Convert a PyTorch dtype into `DType`
     /// - Parameter pyType: The PyTorch dtype in `PythonObject`
     /// - Returns: A `DType` that mapped with given pyType
-    fileprivate func fromPyType(pyType: PythonObject) -> DType? {
+    fileprivate static func fromPyType(pyType: PythonObject) -> DType? {
         switch pyType {
         case torch.bool: return .bool
             
@@ -78,6 +78,11 @@ public enum DType {
 
 /// main tensor struct
 public struct Tensor {
+    /// Get current tensor shape
+    public var shape: Array<Int> { get {
+        return Array(tensorPtr.shape)!
+    }}
+    
     /// The tensor pointer that torch.Tensor stored
     fileprivate var tensorPtr: PythonObject
     
@@ -99,21 +104,28 @@ extension Tensor: ConvertibleFromPython {
     /// Constructor
     /// - Parameters:
     ///   - object: The `PythonObject` in `torch.Tensor` that convert from
-    public init?(_ object: PythonObject) {
-        tensorPtr = torch.Tensor(object)
+    public init(_ object: PythonObject) {
+        tensorPtr = object
     }
     
     /// Get the max index in axis
     /// - Parameter axis: `Int` of axis of argmax
     /// - Returns: A `Tensor` of argmax of current tensor
     public func argmax(axis: Int? = nil) -> Tensor {
-        return Tensor(tensorPtr.argmax(axis: axis))!
+        return Tensor(tensorPtr.argmax(axis: axis))
     }
     
     /// calculate the mean
     /// - Returns: A `Tensor` of mean of current tensor
     public func mean(axis: Int? = nil) -> Tensor {
-        return Tensor(self.tensorPtr.mean(axis: axis))!
+        return Tensor(self.tensorPtr.mean(axis: axis))
+    }
+    
+    /// Reshape current tensor
+    /// - Parameter shape: A target shape in `Array<Int>`
+    /// - Returns: A reshaped `Tensor`
+    public func reshape(_ shape: Array<Int>) -> Tensor {
+        return Tensor(self.tensorPtr.reshape(shape))
     }
     
     /// Cast current tensor to a target dtype
@@ -152,13 +164,13 @@ extension Tensor: Comparable, Equatable {
 
 extension Tensor: CustomStringConvertible {
     public var description: String {
-        return String(tensorPtr)!
+        return tensorPtr.description
     }
 }
 
 extension Tensor: DeviceMovable {
-    public func to(_ device: Device) {
-        self.tensorPtr.to(torch.device(device.rawValue))
+    public mutating func to(_ device: Device) {
+        self.tensorPtr = self.tensorPtr.to(torch.device(device.rawValue))
     }
 }
 
@@ -180,19 +192,19 @@ extension Tensor: Numeric {
     public typealias Magnitude = Tensor
     
     public static func + (lhs: Tensor, rhs: Tensor) -> Tensor {
-        return Tensor(lhs.tensorPtr + rhs.tensorPtr)!
+        return Tensor(lhs.tensorPtr + rhs.tensorPtr)
     }
     
     public static func - (lhs: Tensor, rhs: Tensor) -> Tensor {
-        return Tensor(lhs.tensorPtr - rhs.tensorPtr)!
+        return Tensor(lhs.tensorPtr - rhs.tensorPtr)
     }
     
     public static func * (lhs: Tensor, rhs: Tensor) -> Tensor {
-        return Tensor(lhs.tensorPtr * rhs.tensorPtr)!
+        return Tensor(lhs.tensorPtr * rhs.tensorPtr)
     }
     
     public static func / (lhs: Tensor, rhs: Tensor) -> Tensor {
-        return Tensor(lhs.tensorPtr / rhs.tensorPtr)!
+        return Tensor(lhs.tensorPtr / rhs.tensorPtr)
     }
     
     public static func += (lhs: inout Tensor, rhs: Tensor) {
