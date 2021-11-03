@@ -67,11 +67,6 @@ public struct PyModule: ConvertibleFromPython, Module {
         return params
     }}
     
-    /// The python parameters for this module
-    public var pyParameters: PythonObject { get {
-        return self.modulePtr.parameters()
-    }}
-    
     public init?(_ object: PythonObject) {
         modulePtr = object
     }
