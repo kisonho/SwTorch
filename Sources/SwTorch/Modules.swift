@@ -9,7 +9,11 @@ import PythonKit
 import Foundation
 
 /// Main module protocol
-public protocol Module: DeviceMovable {
+public protocol Module {
+    /// Create new instance by loading from file
+    /// - Parameter file: A `String` of file path to be loaded
+    init(_ file: URL)
+    
     /// Main forward function
     /// - Parameter x: A `Tensor` of input
     /// - Returns: A `Tensor` of output
@@ -50,7 +54,7 @@ extension Module {
 }
 
 /// Main PyTorch Module
-public struct PyModule: ConvertibleFromPython, Module {
+public struct PyModule: Module {
     /// The torch.nn.Module python object
     var modulePtr: PythonObject
     
@@ -67,8 +71,8 @@ public struct PyModule: ConvertibleFromPython, Module {
         return params
     }}
     
-    public init?(_ object: PythonObject) {
-        modulePtr = object
+    public init(_ file: URL) {
+        self.modulePtr = torch.load(file.absoluteString)
     }
     
     public func forward(_ x: Tensor) -> Tensor {
@@ -82,9 +86,11 @@ public struct PyModule: ConvertibleFromPython, Module {
     public func save(_ file: URL) {
         torch.save(modulePtr, file.absoluteString)
     }
-    
-    public func to(_ device: Device) {
-        self.modulePtr.to(torch.device(device.rawValue))
+}
+
+extension PyModule: ConvertibleFromPython {
+    public init?(_ object: PythonObject) {
+        modulePtr = object
     }
 }
 
@@ -94,9 +100,33 @@ extension PyModule: PythonConvertible {
     }
 }
 
+/// A sequential module of `PyModules`
 public struct Sequential: Module {
     /// The modules list
-    var modules: Array<Module> = []
+    var modules: Array<PyModule>
+    
+    /// Constructor
+    /// - Parameter modules: An `Array<ModuleType>` of the modules
+    public init(_ modules: Array<PyModule>) {
+        self.modules = modules
+    }
+    
+    public init(_ file: URL) {
+        // list directories in file URL
+        let os = Python.import("os")
+        let dirs = Array<String>(os.listdir(file.absoluteString))!
+        
+        // initialize loading modules
+        modules = []
+        
+        // loop for each dir
+        for dir in dirs {
+            if dir.prefix(1) != "." {
+                let loadedModule = PyModule(URL(fileURLWithPath: dir))
+                modules.append(loadedModule)
+            }
+        }
+    }
     
     public func forward(_ x: Tensor) -> Tensor {
         // initialize input
@@ -111,14 +141,12 @@ public struct Sequential: Module {
     }
     
     public func loadStateDict<DictValueType>(_ dict: [String : DictValueType]) where DictValueType : PythonConvertible {
-        // loop for modules
         for (i, m) in modules.enumerated() {
             m.loadStateDict(dict[String(i)] as! [String: DictValueType])
         }
     }
     
     public func save(_ file: URL) {
-        // loop for modules
         for (i, module) in modules.enumerated() {
             var moduleFile = file
             moduleFile.appendPathComponent(String(i))
@@ -127,11 +155,8 @@ public struct Sequential: Module {
     }
     
     public mutating func to(_ device: Device) {
-        // loop for modules
         for (i, _) in modules.enumerated() {
             modules[i].to(device)
         }
     }
 }
-
-

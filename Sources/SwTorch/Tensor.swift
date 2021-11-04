@@ -108,11 +108,24 @@ extension Tensor: ConvertibleFromPython {
         tensorPtr = object
     }
     
+    /// Get the absolute value of current `Tensor`
+    /// - Returns: A `Tensor` of absoluted values
+    public func abs() -> Tensor {
+        return Tensor(tensorPtr.abs())
+    }
+    
     /// Get the max index in axis
     /// - Parameter axis: `Int` of axis of argmax
     /// - Returns: A `Tensor` of argmax of current tensor
     public func argmax(axis: Int? = nil) -> Tensor {
         return Tensor(tensorPtr.argmax(axis: axis))
+    }
+    
+    /// Get the equal value among values of current `Tensor` and another `Tensor`
+    /// - Parameter other: Another `Tensor` to be compared
+    /// - Returns: A `Tensor` of Bool on all values
+    public func equal(_ other: Tensor) -> Tensor {
+        return Tensor(torch.eq(self, other))
     }
     
     /// calculate the mean
@@ -175,21 +188,21 @@ extension Tensor: DeviceMovable {
 }
 
 extension Tensor: Numeric {
-    public init?<T>(exactly source: T) where T : BinaryInteger {
-        self.tensorPtr = torch.Tensor(Int(source))
-    }
+    public typealias IntegerLiteralType = Int
     
-    public init(integerLiteral value: Float) {
-        self.tensorPtr = torch.Tensor(value)
-    }
+    public typealias Magnitude = Tensor
     
     public var magnitude: Tensor {
         return Tensor(torch.abs(tensorPtr))
     }
     
-    public typealias IntegerLiteralType = Float
+    public init?<T>(exactly source: T) where T : BinaryInteger {
+        self.tensorPtr = torch.Tensor(Int(source))
+    }
     
-    public typealias Magnitude = Tensor
+    public init(integerLiteral value: Int) {
+        self.tensorPtr = torch.Tensor(value)
+    }
     
     public static func + (lhs: Tensor, rhs: Tensor) -> Tensor {
         return Tensor(lhs.tensorPtr + rhs.tensorPtr)
@@ -205,6 +218,10 @@ extension Tensor: Numeric {
     
     public static func / (lhs: Tensor, rhs: Tensor) -> Tensor {
         return Tensor(lhs.tensorPtr / rhs.tensorPtr)
+    }
+    
+    public static func ^ (lhs: Tensor, rhs: Tensor) -> Tensor {
+        return Tensor(torch.pow(lhs, rhs))
     }
     
     public static func += (lhs: inout Tensor, rhs: Tensor) {
