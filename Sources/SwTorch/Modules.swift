@@ -14,6 +14,9 @@ public protocol Module {
     /// - Parameter file: A `String` of file path to be loaded
     init(_ file: URL)
     
+    /// Set target module into validation mode
+    func eval()
+    
     /// Main forward function
     /// - Parameter x: A `Tensor` of input
     /// - Returns: A `Tensor` of output
@@ -23,13 +26,16 @@ public protocol Module {
     /// - Parameter file: A String of saved module path
     func loadStateDict<DictValueType: PythonConvertible>(_ dict: [String: DictValueType])
     
+    /// Set target module into training mode
+    func train()
+    
     /// Save current model
     /// - Parameter file: A `String` of file path to be saved
     func save(_ file: URL)
 }
 
 extension Module {
-    /// Automatically get all parameters
+    /// Automatically get all parameters in current module
     var parameters: Array<Tensor> { get {
         // initialize mirror
         let mirror = Mirror(reflecting: self)
@@ -39,6 +45,8 @@ extension Module {
         for attr in mirror.children {
             if let param = attr.value as? Tensor {
                 params.append(param)
+            } else if let m = attr.value as? Module {
+                params += m.parameters
             }
         }
         
@@ -46,8 +54,8 @@ extension Module {
     } }
     
     /// Main forward pass function
-    /// - Parameter x: A Tensor of input
-    /// - Returns: A Tensor of output
+    /// - Parameter x: A `Tensor` of input
+    /// - Returns: A `Tensor` of output
     public func callAsFunction(_ x: Tensor) -> Tensor {
         return forward(x)
     }
@@ -75,12 +83,20 @@ public struct PyModule: Module {
         self.modulePtr = torch.load(file.absoluteString)
     }
     
+    public func eval() {
+        modulePtr.eval()
+    }
+    
     public func forward(_ x: Tensor) -> Tensor {
         return Tensor(modulePtr(x))
     }
     
     public func loadStateDict<DictValueType: PythonConvertible>(_ dict: [String: DictValueType]) {
         self.modulePtr.loadStateDict(dict)
+    }
+    
+    public func train() {
+        modulePtr.train()
     }
     
     public func save(_ file: URL) {
@@ -105,6 +121,18 @@ public struct Sequential: Module {
     /// The modules list
     var modules: Array<PyModule>
     
+    var parameters: Array<Tensor> { get {
+        // initialize getting parameters
+        var params = Array<Tensor>()
+        
+        // loop for each module
+        for m in modules {
+            params += m.parameters
+        }
+        
+        return params
+    }}
+    
     /// Constructor
     /// - Parameter modules: An `Array<ModuleType>` of the modules
     public init(_ modules: Array<PyModule>) {
@@ -125,6 +153,12 @@ public struct Sequential: Module {
                 let loadedModule = PyModule(URL(fileURLWithPath: dir))
                 modules.append(loadedModule)
             }
+        }
+    }
+    
+    public func eval() {
+        for m in modules {
+            m.eval()
         }
     }
     
@@ -151,6 +185,12 @@ public struct Sequential: Module {
             var moduleFile = file
             moduleFile.appendPathComponent(String(i))
             module.save(moduleFile)
+        }
+    }
+    
+    public func train() {
+        for m in modules {
+            m.train()
         }
     }
     

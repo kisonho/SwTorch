@@ -19,25 +19,14 @@ public protocol Enterable {
 /// disable gradients tracking
 public struct NoGrad: Enterable {
     /// Previous status
-    private var prev: Bool = false
+    private var prev = Bool(torch.is_grad_enabled())!
     
-    mutating public func enter() {
-        prev = Bool(torch.is_grad_enabled())!
+    public func enter() {
         torch.set_grad_enabled(false)
     }
     
-    mutating public func exit() {
+    public func exit() {
         torch.set_grad_enabled(prev)
-    }
-}
-
-extension PythonObject : Enterable {
-    mutating public func enter() {
-        self.pythonObject.__enter__()
-    }
-    
-    mutating public func exit() {
-        self.pythonObject.__exit__()
     }
 }
 

@@ -43,6 +43,9 @@ public extension EvaluatingManager {
     func validate(_ dataLoader: PythonObject) throws -> [String: Float] {
         // no gradients
         var no_grad = NoGrad()
+        model.eval()
+        
+        // validate
         let valResultList: [String: Array<Float>] = try with(&no_grad) { _ in
             // initialize validation
             var resultList: [String: Array<Float>] = [:]
@@ -80,6 +83,7 @@ public extension EvaluatingManager {
             valResult[key] = Float(torch.Tensor(m).mean())!
         }
         
+        // reset model mode
         return valResult
     }
     
@@ -147,9 +151,10 @@ public extension TrainingManager {
             // initialize epoch
             var resultList: [String: Array<Float>] = [:]
             onEpochStart(epoch: epoch, totalEpochs: epochs)
+            model.train()
             
             // batch loop
-            for (batch, example) in Array(trainingDatasetLoader).enumerated() {
+            for (batch, example) in trainingDatasetLoader.enumerated() {
                 // extract example
                 var xTrain = Tensor(example.tuple2.0)
                 var yTrain = Tensor(example.tuple2.1)

@@ -23,7 +23,7 @@ public protocol DeviceMovable {
     mutating func to(_ device: Device)
 }
 
-extension DeviceMovable {
+public extension DeviceMovable {
     /// Move current object to cpu
     mutating func cpu() {
         self.to(.cpu)

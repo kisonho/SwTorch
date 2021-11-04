@@ -8,7 +8,7 @@
 import Foundation
 
 /// Main metrics protocol
-protocol Metrics {
+public protocol Metrics {
     /// Basic score
     var score: Array<Float> { get set }
     
@@ -36,38 +36,44 @@ extension Metrics {
 }
 
 /// The metrics that calculates accuracy between two `Tensor`
-class Accuracy: Metrics {
-    var score: Array<Float> = []
+public class Accuracy: Metrics {
+    public var score: Array<Float> = []
     
-    func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
-        return Float(yTrue.equal(yPred).to(dtype: .float32).mean())!
+    public init() {}
+    
+    public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
+        return Float(yTrue.equal(yPred).to(dtype: .float32).mean(axis: 0))!
     }
 }
 
 /// The mean absolute error between two `Tensor`
-class MAE: Metrics {
-    var score: Array<Float> = []
+public class MAE: Metrics {
+    public var score: Array<Float> = []
     
-    func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
+    public init() {}
+    
+    public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
         let diff = yTrue - yPred
         return Float(diff.abs().mean())!
     }
 }
 
 /// The mean squared error between two `Tensor`
-class MSE: Metrics {
-    var score: Array<Float> = []
+public class MSE: Metrics {
+    public var score: Array<Float> = []
     
-    func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
+    public init() {}
+    
+    public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
         let diff = (yTrue - yPred) ^ 2
         return Float(diff.abs().mean())!
     }
 }
 
 /// The metrics that calculate accuracy between a real label `Tensor` and logits `Tensor`
-final class SparseCategoricalAccuracy: Accuracy {
-    override func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
+public final class SparseCategoricalAccuracy: Accuracy {
+    public override func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
         let y = yPred.argmax(axis: 1)
-        return super.callAsFunction(yTrue: y, yPred: yPred)
+        return super.callAsFunction(yTrue: yTrue, yPred: y)
     }
 }

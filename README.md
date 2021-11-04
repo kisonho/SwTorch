@@ -42,6 +42,9 @@ class ModelEvaluator: EvaluatingManager {
 ## Device Management
 Use `.to(<Device>)` to move a `DeviceMovable` object to target device.
 
+## Unmapped PyTorch operations or types
+Directly use `torch.*` as `PythonObject`
+
 ## MNIST Example
 * A Simple CNN example for MNIST dataset:
 [MNISTExample](https://github.com/kisonho/MNIST-SwTorch-Example)
