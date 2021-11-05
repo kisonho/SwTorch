@@ -31,9 +31,6 @@ public protocol EvaluatingManager {
     /// calculate loss
     /// - Returns: A `Tensor` of loss
     func calculateLoss(yTrue: Tensor, yPred: Tensor) -> Tensor
-    
-    /// On every batch ends
-    func onBatchEnd(batch: Int, result: [String: Float])
 }
 
 public extension EvaluatingManager {
@@ -60,7 +57,6 @@ public extension EvaluatingManager {
                 
                 // train step
                 let result = valStep(xTest, yTest)
-                onBatchEnd(batch: batch, result: result)
                 
                 // append to list
                 for (key, m) in result {
@@ -117,6 +113,9 @@ public protocol TrainingManager: EvaluatingManager {
     
     /// The optimizer to update model
     var optimizer: OptimizerType { get }
+    
+    /// On every batch ends
+    func onBatchEnd(batch: Int, result: [String: Float])
     
     /// On every epoch starts
     func onEpochStart(epoch: Int, totalEpochs: Int)
