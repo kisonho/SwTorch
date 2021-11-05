@@ -51,7 +51,7 @@ public extension EvaluatingManager {
             var resultList: [String: Array<Float>] = [:]
             
             // batch loop
-            for (batch, example) in Array(dataLoader).enumerated() {
+            for (batch, example) in dataLoader.enumerated() {
                 // extract example
                 var xTest = Tensor(example.tuple2.0)
                 var yTest = Tensor(example.tuple2.1)
