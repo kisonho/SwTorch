@@ -122,7 +122,7 @@ public protocol TrainingManager: EvaluatingManager {
     
     /// On every epoch ends
     /// - Returns: A Bool of flag if this result is best
-    func onEpochEnd(epoch: Int, totalEpochs: Int, trainingResult: [String: Float], valResult: [String: Float]?) -> Bool
+    func onEpochEnd(epoch: Int, totalEpochs: Int) -> Bool
 }
 
 public extension TrainingManager {
@@ -148,12 +148,14 @@ public extension TrainingManager {
         // epoch loop
         for epoch in initialEpoch ..< epochs {
             // initialize epoch
-            var resultList: [String: Array<Float>] = [:]
             onEpochStart(epoch: epoch, totalEpochs: epochs)
             model.train()
             
             // batch loop
             for (batch, example) in trainingDatasetLoader.enumerated() {
+                // on batch start
+                var resultList: [String: Array<Float>] = [:]
+                
                 // extract example
                 var xTrain = Tensor(example.tuple2.0)
                 var yTrain = Tensor(example.tuple2.1)
@@ -176,20 +178,11 @@ public extension TrainingManager {
                 onBatchEnd(batch: batch, result: result)
             }
             
-            // initialize training result
-            var trainingResult: [String: Float] = [:]
-            var valResult: [String: Float]? = nil
-            
-            // calculate mean
-            for (key, m) in resultList {
-                trainingResult[key] = Float(torch.Tensor(m).mean())!
-            }
-            
             // validation
-            valResult = validationDatasetLoader != nil ? try self.validate(validationDatasetLoader!) : nil
+            let valResult = validationDatasetLoader != nil ? try self.validate(validationDatasetLoader!) : nil
             
             // end epoch callback
-            let isBest = self.onEpochEnd(epoch: epoch, totalEpochs: epochs, trainingResult: trainingResult, valResult: valResult)
+            let isBest = self.onEpochEnd(epoch: epoch, totalEpochs: epochs)
             
             // set best result
             bestResult = isBest == true ? valResult : bestResult

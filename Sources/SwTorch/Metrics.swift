@@ -5,15 +5,18 @@
 //  Created by Kison Ho on 11/4/21.
 //
 
-import Foundation
+import PythonKit
 
 /// Main metrics protocol
 public protocol Metrics {
-    /// Basic score
+    /// Scores recorded
     var score: Array<Float> { get set }
     
     /// Calculate method of metric
-    /// - Returns: A `Tensor` of current metric
+    /// - Parameters:
+    ///   - yTrue: The label `Tensor`
+    ///   - yPred: The target `Tensor`
+    /// - Returns: A `Float` of current metric
     func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float
 }
 
@@ -67,6 +70,23 @@ public class MSE: Metrics {
     public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
         let diff = (yTrue - yPred) ^ 2
         return Float(diff.abs().mean())!
+    }
+}
+
+public struct PyMetrics: Metrics {
+    /// The pointer of python metrics
+    public var metricsPtr: PythonObject
+    
+    public var score: Array<Float> = []
+    
+    public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
+        return Float(metricsPtr(yPred, yTrue))!
+    }
+}
+
+extension PyMetrics: ConvertibleFromPython {
+    public init(_ object: PythonObject) {
+        self.metricsPtr = object
     }
 }
 
