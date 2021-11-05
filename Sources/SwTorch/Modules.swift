@@ -34,7 +34,7 @@ public protocol Module {
     func save(_ file: URL)
 }
 
-extension Module {
+public extension Module {
     /// Automatically get all parameters in current module
     var parameters: Array<Tensor> { get {
         // initialize mirror
@@ -56,7 +56,7 @@ extension Module {
     /// Main forward pass function
     /// - Parameter x: A `Tensor` of input
     /// - Returns: A `Tensor` of output
-    public func callAsFunction(_ x: Tensor) -> Tensor {
+    func callAsFunction(_ x: Tensor) -> Tensor {
         return forward(x)
     }
 }

@@ -9,9 +9,6 @@ import PythonKit
 
 /// Main metrics protocol
 public protocol Metrics {
-    /// Scores recorded
-    var score: Array<Float> { get set }
-    
     /// Calculate method of metric
     /// - Parameters:
     ///   - yTrue: The label `Tensor`
@@ -20,30 +17,8 @@ public protocol Metrics {
     func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float
 }
 
-extension Metrics {
-    /// The final result of metrics
-    var result: Float { get {
-        return Float(Tensor(score, dtype: .float32).mean())!
-    }}
-    
-    /// The main update method to calculate metric and update score
-    /// - Parameters:
-    ///   - yTrue: A `Tensor` of label
-    ///   - yPred: A `Tensor` of module output
-    /// - Returns: A `Float` of current metric
-    mutating func update(yTrue: Tensor, yPred: Tensor) -> Float {
-        let metric = callAsFunction(yTrue: yTrue, yPred: yPred)
-        score.append(metric)
-        return metric
-    }
-}
-
 /// The metrics that calculates accuracy between two `Tensor`
 public class Accuracy: Metrics {
-    public var score: Array<Float> = []
-    
-    public init() {}
-    
     public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
         return Float(yTrue.equal(yPred).to(dtype: .float32).mean(axis: 0))!
     }
@@ -51,10 +26,6 @@ public class Accuracy: Metrics {
 
 /// The mean absolute error between two `Tensor`
 public class MAE: Metrics {
-    public var score: Array<Float> = []
-    
-    public init() {}
-    
     public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
         let diff = yTrue - yPred
         return Float(diff.abs().mean())!
@@ -63,21 +34,16 @@ public class MAE: Metrics {
 
 /// The mean squared error between two `Tensor`
 public class MSE: Metrics {
-    public var score: Array<Float> = []
-    
-    public init() {}
-    
     public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
         let diff = (yTrue - yPred) ^ 2
         return Float(diff.abs().mean())!
     }
 }
 
+/// The python metrics mapping struct
 public struct PyMetrics: Metrics {
     /// The pointer of python metrics
     public var metricsPtr: PythonObject
-    
-    public var score: Array<Float> = []
     
     public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
         return Float(metricsPtr(yPred, yTrue))!
@@ -92,8 +58,11 @@ extension PyMetrics: ConvertibleFromPython {
 
 /// The metrics that calculate accuracy between a real label `Tensor` and logits `Tensor`
 public final class SparseCategoricalAccuracy: Accuracy {
+    /// The axis of prediction
+    var axis: Int = 1
+    
     public override func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
-        let y = yPred.argmax(axis: 1)
+        let y = yPred.argmax(axis: axis)
         return super.callAsFunction(yTrue: yTrue, yPred: y)
     }
 }

@@ -23,7 +23,7 @@ public protocol LrScheduler {
     func updateLr() -> Float
 }
 
-extension LrScheduler {
+public extension LrScheduler {
     /// Call for each step
     mutating func step() {
         // get updated lr

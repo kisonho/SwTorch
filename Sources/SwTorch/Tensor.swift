@@ -15,6 +15,36 @@ public enum DType {
     case float16, float32, float64
     case uint8
     case qint4, qint8, qfint32, quint4x2
+        
+    /// Convert a PyTorch dtype into `DType`
+    /// - Parameter pyType: The PyTorch dtype in `PythonObject`
+    /// - Returns: A `DType` that mapped with given pyType
+    fileprivate static func fromPyType(pyType: PythonObject) -> DType? {
+        switch pyType {
+        case torch.bool: return .bool
+            
+        case torch.complex32: return .complex32
+        case torch.complex64: return .complex64
+        case torch.complex128: return .complex128
+            
+        case torch.float16: return .float16
+        case torch.float32: return .float32
+        case torch.float64: return .float64
+            
+        case torch.int8: return .int8
+        case torch.int16: return .int16
+        case torch.int32: return .int32
+        case torch.int64: return .int64
+            
+        case torch.uint8: return .uint8
+            
+        case torch.qint4: return .qint4
+        case torch.qint8: return .qint8
+        case torch.qfint32: return .qfint32
+        case torch.quint4x2: return .quint4x2
+        default: return nil
+        }
+    }
     
     /// to pytorch dtype
     /// - Returns: A `torch.<dtype>` for the mapping type in `PythonObject`
@@ -42,36 +72,6 @@ public enum DType {
         case .qint8: return torch.qint8
         case .qfint32: return torch.qfint32
         case .quint4x2: return torch.quint4x2
-        }
-    }
-    
-    /// Convert a PyTorch dtype into `DType`
-    /// - Parameter pyType: The PyTorch dtype in `PythonObject`
-    /// - Returns: A `DType` that mapped with given pyType
-    fileprivate static func fromPyType(pyType: PythonObject) -> DType? {
-        switch pyType {
-        case torch.bool: return .bool
-            
-        case torch.complex32: return .complex32
-        case torch.complex64: return .complex64
-        case torch.complex128: return .complex128
-            
-        case torch.int8: return .int8
-        case torch.int16: return .int16
-        case torch.int32: return .int32
-        case torch.int64: return .int64
-            
-        case torch.float16: return .float16
-        case torch.float32: return .float32
-        case torch.float64: return .float64
-            
-        case torch.uint8: return .uint8
-            
-        case torch.qint4: return .qint4
-        case torch.qint8: return .qint8
-        case torch.qfint32: return .qfint32
-        case torch.quint4x2: return .quint4x2
-        default: return nil
         }
     }
 }
