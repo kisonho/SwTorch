@@ -100,6 +100,16 @@ public struct PyModule: Module {
     }
     
     public func save(_ file: URL) {
+        // import required python library
+        let os = Python.import("os")
+        
+        // get directory from URL
+        let dir = file.deletingLastPathComponent()
+        
+        // create directory
+        os.makedirs(dir.absoluteString, exist_ok: true)
+        
+        // save module
         torch.save(modulePtr, file.absoluteString)
     }
 }
