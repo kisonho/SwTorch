@@ -86,12 +86,16 @@ public struct Tensor {
     /// The tensor pointer that torch.Tensor stored
     fileprivate var tensorPtr: PythonObject
     
+    /// Get current tensor type
+    public var type: DType
+    
     /// Constructor
     /// - Parameters:
     ///   - value: A PythonConvertible real value of the tensor
     ///   - shape:
     public init<ValueType: PythonConvertible>(_ value: ValueType, dtype: DType = .float32) {
         self.tensorPtr = torch.Tensor(value, dtype: dtype.toPyType())
+        self.type = dtype
     }
     
     /// backward function
@@ -100,14 +104,7 @@ public struct Tensor {
     }
 }
 
-extension Tensor: ConvertibleFromPython {
-    /// Constructor
-    /// - Parameters:
-    ///   - object: The `PythonObject` in `torch.Tensor` that convert from
-    public init(_ object: PythonObject) {
-        tensorPtr = object
-    }
-    
+extension Tensor {
     /// Get the absolute value of current `Tensor`
     /// - Returns: A `Tensor` of absoluted values
     public func abs() -> Tensor {
@@ -129,6 +126,7 @@ extension Tensor: ConvertibleFromPython {
     }
     
     /// calculate the mean
+    /// - Parameter axis: `Int` of axis of mean
     /// - Returns: A `Tensor` of mean of current tensor
     public func mean(axis: Int? = nil) -> Tensor {
         return Tensor(self.tensorPtr.mean(axis: axis))
@@ -141,11 +139,27 @@ extension Tensor: ConvertibleFromPython {
         return Tensor(self.tensorPtr.reshape(shape))
     }
     
+    /// Sum along the axis
+    /// - Parameter axis: `Int` of axis of sum
+    public func sum(axis: Int? = nil) -> Tensor {
+        return Tensor(self.tensorPtr.sum(axis: axis))
+    }
+    
     /// Cast current tensor to a target dtype
     /// - Parameter dtype: A `DType` enum of target dtype
     /// - Returns: A converted `Tensor`
     public func to(dtype: DType) -> Tensor {
         return Tensor(self.tensorPtr.to(dtype.toPyType()))
+    }
+}
+
+extension Tensor: ConvertibleFromPython {
+    /// Constructor
+    /// - Parameters:
+    ///   - object: The `PythonObject` in `torch.Tensor` that convert from
+    public init(_ object: PythonObject) {
+        tensorPtr = object
+        self.type = DType.fromPyType(pyType: object.type())!
     }
 }
 
@@ -159,11 +173,11 @@ extension Tensor: Comparable, Equatable {
     }
     
     public static func == (lhs: Tensor, rhs: Tensor) -> Bool {
-        return lhs.tensorPtr == rhs.tensorPtr
+        return Bool(torch.equal(lhs.tensorPtr, rhs.tensorPtr))!
     }
     
     public static func != (lhs: Tensor, rhs: Tensor) -> Bool {
-        return lhs.tensorPtr != rhs.tensorPtr
+        return !Bool(torch.equal(lhs.tensorPtr, rhs.tensorPtr))!
     }
     
     public static func > (lhs: Tensor, rhs: Tensor) -> Bool {
@@ -198,10 +212,12 @@ extension Tensor: Numeric {
     
     public init?<T>(exactly source: T) where T : BinaryInteger {
         self.tensorPtr = torch.Tensor(Int(source))
+        self.type = .int64
     }
     
     public init(integerLiteral value: Int) {
         self.tensorPtr = torch.Tensor(value)
+        self.type = .int64
     }
     
     public static func + (lhs: Tensor, rhs: Tensor) -> Tensor {
