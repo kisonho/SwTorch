@@ -125,15 +125,7 @@ public protocol TrainingManager: EvaluatingManager {
     func onEpochEnd(epoch: Int, totalEpochs: Int, trainingResult: [String: Float], valResult: [String: Float]?) -> Bool
 }
 
-public extension TrainingManager {
-    /// Backward pass
-    /// - Parameters:
-    ///   - loss: A torch.Tensor of loss
-    func backward(_ loss: Tensor) {
-        loss.backward()
-        optimizer.step()
-    }
-    
+public extension TrainingManager {    
     /// Main training function
     /// - Parameters:
     ///   - trainingDatasetLoader: A torch.utils.data.DataLoader to load the training dataset
@@ -214,7 +206,8 @@ public extension TrainingManager {
         metrics["loss"] = Float(loss)!
         
         // backward pass
-        backward(loss)
+        loss.backward()
+        optimizer.step()
         return metrics
     }
 }
