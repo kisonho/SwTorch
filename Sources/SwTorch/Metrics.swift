@@ -19,6 +19,8 @@ public protocol Metrics {
 
 /// The metrics that calculates accuracy between two `Tensor`
 public class Accuracy: Metrics {
+    public init() {}
+    
     public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
         return Float(yTrue.equal(yPred).to(dtype: .float32).mean(axis: 0))!
     }
@@ -26,6 +28,8 @@ public class Accuracy: Metrics {
 
 /// The mean absolute error between two `Tensor`
 public class MAE: Metrics {
+    public init() {}
+    
     public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
         let diff = yTrue - yPred
         return Float(diff.abs().mean())!
@@ -34,6 +38,8 @@ public class MAE: Metrics {
 
 /// The mean squared error between two `Tensor`
 public class MSE: Metrics {
+    public init() {}
+    
     public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
         let diff = (yTrue - yPred) ^ 2
         return Float(diff.abs().mean())!

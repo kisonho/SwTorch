@@ -100,9 +100,7 @@ public struct PyModule: Module {
     }
     
     public func save(_ file: URL) {
-        let startIndex = file.absoluteString.index(file.absoluteString.startIndex, offsetBy: 7)
-        let filePath = String(file.absoluteString[startIndex...])
-        torch.save(modulePtr, filePath)
+        torch.save(modulePtr, file.absoluteString)
     }
 }
 

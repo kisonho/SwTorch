@@ -14,7 +14,6 @@ public enum DType {
     case int8, int16, int32, int64
     case float16, float32, float64
     case uint8
-    case qint4, qint8, qfint32, quint4x2
         
     /// Convert a PyTorch dtype into `DType`
     /// - Parameter pyType: The PyTorch dtype in `PythonObject`
@@ -37,11 +36,6 @@ public enum DType {
         case torch.int64: return .int64
             
         case torch.uint8: return .uint8
-            
-        case torch.qint4: return .qint4
-        case torch.qint8: return .qint8
-        case torch.qfint32: return .qfint32
-        case torch.quint4x2: return .quint4x2
         default: return nil
         }
     }
@@ -67,11 +61,6 @@ public enum DType {
         case .float64: return torch.float64
             
         case .uint8: return torch.uint8
-            
-        case .qint4: return torch.qint4
-        case .qint8: return torch.qint8
-        case .qfint32: return torch.qfint32
-        case .quint4x2: return torch.quint4x2
         }
     }
 }
@@ -87,7 +76,7 @@ public struct Tensor {
     fileprivate var tensorPtr: PythonObject
     
     /// Get current tensor type
-    public var type: DType
+//    public var type: DType
     
     /// Constructor
     /// - Parameters:
@@ -95,7 +84,7 @@ public struct Tensor {
     ///   - shape:
     public init<ValueType: PythonConvertible>(_ value: ValueType, dtype: DType = .float32) {
         self.tensorPtr = torch.Tensor(value, dtype: dtype.toPyType())
-        self.type = dtype
+//        self.type = dtype
     }
     
     /// backward function
@@ -159,7 +148,6 @@ extension Tensor: ConvertibleFromPython {
     ///   - object: The `PythonObject` in `torch.Tensor` that convert from
     public init(_ object: PythonObject) {
         tensorPtr = object
-        self.type = DType.fromPyType(pyType: object.type())!
     }
 }
 
@@ -212,12 +200,12 @@ extension Tensor: Numeric {
     
     public init?<T>(exactly source: T) where T : BinaryInteger {
         self.tensorPtr = torch.Tensor(Int(source))
-        self.type = .int64
+//        self.type = .int64
     }
     
     public init(integerLiteral value: Int) {
         self.tensorPtr = torch.Tensor(value)
-        self.type = .int64
+//        self.type = .int64
     }
     
     public static func + (lhs: Tensor, rhs: Tensor) -> Tensor {
