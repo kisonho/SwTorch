@@ -1,4 +1,4 @@
-# # SwTorch
+# SwTorch
 PyTorch training/evaluation wrap for Swift.
 ---
 ## Requirements
@@ -17,11 +17,11 @@ Create a model that implements the **Module** protocol, or load a python module 
 A PyTorch Tensor (`torch.nn.Tensor`) is represented as Tensor, which actual variable was stored in its `pythonObject`. 
 
 ## Evaluation
-* Creating a class to implement the **EvaluatingManager**
+* Creating a class to implement the **Evaluating** protocol
 ```
 import SwTorch
 
-class ModelEvaluator: EvaluatingManager {
+class ModelEvaluator: Evaluating {
     ...
 }
 ```
@@ -29,11 +29,11 @@ class ModelEvaluator: EvaluatingManager {
 * `onBatchEnd(batch, result)` is the call back method for each batch validation.
 
 ## Training
-* Creating a class to implement the **TrainingManager**
+* Creating a class to implement the **Training** protocol
 ```
 import SwTorch
 
-class ModelEvaluator: EvaluatingManager {
+class ModelEvaluator: Training {
     ...
 }
 ```
