@@ -7,12 +7,43 @@
 
 import PythonKit
 
+/// The metrics that calculate cross entropy loss between two `Tensor`
+public class CrossEntropyLoss: Loss {
+    var weight: Tensor? = nil
+    
+    var ignoreIndex: Int? = nil
+    
+    public init() {}
+    
+    /// Constructor
+    /// - Parameters:
+    ///   - weight: A `Tensor` of loss weight
+    ///   - ignoreIndex: An `Int` of target value that is ignored and does not contribute to the input gradient
+    public init(weight: Tensor, ignoreIndex: Int = -100) {
+        self.weight = weight
+        self.ignoreIndex = ignoreIndex
+    }
+    
+    public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Tensor {
+        return Tensor(torch.nn.functional.cross_entropy(yPred, yTrue, weight: weight, ignore_index: ignoreIndex))
+    }
+}
+
+public protocol Loss {
+    /// Calculate method of metric
+    /// - Parameters:
+    ///   - yTrue: The target `Tensor`
+    ///   - yPred: The input `Tensor`
+    /// - Returns: A `Tensor` of current metric
+    func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Tensor
+}
+
 /// Main metrics protocol
 public protocol Metrics {
     /// Calculate method of metric
     /// - Parameters:
-    ///   - yTrue: The label `Tensor`
-    ///   - yPred: The target `Tensor`
+    ///   - yTrue: The target `Tensor`
+    ///   - yPred: The input `Tensor`
     /// - Returns: A `Float` of current metric
     func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float
 }

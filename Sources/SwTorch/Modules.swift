@@ -23,8 +23,8 @@ public protocol Module {
     func forward(_ x: Tensor) -> Tensor
     
     /// Load state dict from saved module
-    /// - Parameter file: A String of saved module path
-    func loadStateDict<DictValueType: PythonConvertible>(_ dict: [String: DictValueType])
+    /// - Parameter dict: A `Dictionary` of parameter name and `Tensor`
+    mutating func loadStateDict(_ dict: [String: Tensor])
     
     /// Set target module into training mode
     func train()
@@ -66,6 +66,13 @@ public struct PyModule: Module {
     /// The torch.nn.Module python object
     var modulePtr: PythonObject
     
+    /// The sub `PyModule` inside this module
+    var modules: Array<PyModule> {
+        get {
+            return Array(modulePtr.modules())!
+        }
+    }
+    
     public var parameters: Array<Tensor> { get {
         // initialize getting parameters
         let pyParams = self.modulePtr.parameters()
@@ -91,7 +98,7 @@ public struct PyModule: Module {
         return Tensor(modulePtr(x))
     }
     
-    public func loadStateDict<DictValueType: PythonConvertible>(_ dict: [String: DictValueType]) {
+    public func loadStateDict(_ dict: [String: Tensor]) {
         self.modulePtr.loadStateDict(dict)
     }
     
@@ -184,18 +191,15 @@ public struct Sequential: Module {
         return x
     }
     
-    public func loadStateDict<DictValueType>(_ dict: [String : DictValueType]) where DictValueType : PythonConvertible {
-        for (i, m) in modules.enumerated() {
-            m.loadStateDict(dict[String(i)] as! [String: DictValueType])
-        }
+    public mutating func loadStateDict(_ dict: [String : Tensor]) {
+        let pySequential = PyModule(torch.nn.Sequential(modules))!
+        pySequential.loadStateDict(dict)
+        modules = pySequential.modules
     }
     
     public func save(_ file: URL) {
-        for (i, module) in modules.enumerated() {
-            var moduleFile = file
-            moduleFile.appendPathComponent(String(i))
-            module.save(moduleFile)
-        }
+        let pySequential = PyModule(torch.nn.Sequential(modules))!
+        pySequential.save(file)
     }
     
     public func train() {
