@@ -82,8 +82,8 @@ public struct Tensor {
     /// - Parameters:
     ///   - value: A PythonConvertible real value of the tensor
     ///   - shape:
-    public init<ValueType: PythonConvertible>(_ value: ValueType, dtype: DType = .float32) {
-        self.tensorPtr = torch.Tensor(value, dtype: dtype.toPyType())
+    public init<ValueType: PythonConvertible>(value: ValueType, dtype: DType = .float32) {
+        self.tensorPtr = torch.tensor(value, dtype: dtype.toPyType())
 //        self.type = dtype
     }
     

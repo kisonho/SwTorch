@@ -11,7 +11,7 @@ import PythonKit
 public let torch = Python.import("torch")
 
 /// Main Validation Protocol
-public protocol EvaluatingManager {
+public protocol Evaluating {
     /// The type of model
     associatedtype ModuleType: Module
     
@@ -33,11 +33,11 @@ public protocol EvaluatingManager {
     func calculateLoss(yTrue: Tensor, yPred: Tensor) -> Tensor
 }
 
-public extension EvaluatingManager {
+public extension Evaluating {
     /// Main validation function
     /// - Parameter dataLoader: A torch.utils.data.DataLoader to load the dataset
     /// - Returns: A Dictionary of validation results
-    func validate(_ dataLoader: PythonObject) throws -> [String: Float] {
+    func validate(_ dataset: PythonObject) throws -> [String: Float] {
         // no gradients
         var no_grad = NoGrad()
         model.eval()
@@ -48,7 +48,7 @@ public extension EvaluatingManager {
             var resultList: [String: Array<Float>] = [:]
             
             // batch loop
-            for (batch, example) in dataLoader.enumerated() {
+            for (batch, example) in dataset.enumerated() {
                 // extract example
                 var xTest = Tensor(example.tuple2.0)
                 var yTest = Tensor(example.tuple2.1)
@@ -101,7 +101,7 @@ public extension EvaluatingManager {
 }
 
 /// Main Training Protocol
-public protocol TrainingManager: EvaluatingManager {
+public protocol Training: Evaluating {
     /// The learning rate scheduler type
     associatedtype LrSchedulerType: LrScheduler
     
@@ -125,17 +125,23 @@ public protocol TrainingManager: EvaluatingManager {
     func onEpochEnd(epoch: Int, totalEpochs: Int, trainingResult: [String: Float], valResult: [String: Float]?) -> Bool
 }
 
-public extension TrainingManager {    
+public extension Training {
     /// Main training function
     /// - Parameters:
-    ///   - trainingDatasetLoader: A torch.utils.data.DataLoader to load the training dataset
+    ///   - trainingDataset: A torch.utils.data.DataLoader to load the training dataset
     ///   - epochs: An Int of number of epochs
     ///   - initialEpoch: An Int of the starting epoch index
-    ///   - validationDatasetLoader: An optional torch.utils.data.DataLoader to load validation dataset
+    ///   - validationDataset: An optional torch.utils.data.DataLoader to load validation dataset
     /// - Returns: An optional Dictionary of metrics (if validationDatasetLoader is not nil)
-    mutating func train(trainingDatasetLoader: PythonObject, epochs: Int, initialEpoch: Int = 0, validationDatasetLoader: PythonObject? = nil) throws -> [String: Float]? {
+    mutating func train(trainingDataset: PythonObject, epochs: Int, initialEpoch: Int = 0, validationDataset: PythonObject? = nil) throws -> [String: Float]? {
         // initialize training
         var bestResult: [String: Float]? = nil
+        
+        // check initial epoch to be smaller then epochs
+        if initialEpoch >= epochs {
+            print("[Warning]: initial epochs \(initialEpoch) is larger or equal then epochs \(epochs)!")
+            return nil
+        }
         
         // epoch loop
         for epoch in initialEpoch ..< epochs {
@@ -145,7 +151,7 @@ public extension TrainingManager {
             model.train()
             
             // batch loop
-            for (batch, example) in trainingDatasetLoader.enumerated() {
+            for (batch, example) in trainingDataset.enumerated() {
                 // extract example
                 var xTrain = Tensor(example.tuple2.0)
                 var yTrain = Tensor(example.tuple2.1)
@@ -177,7 +183,7 @@ public extension TrainingManager {
             }
             
             // validation
-            let valResult = validationDatasetLoader != nil ? try self.validate(validationDatasetLoader!) : nil
+            let valResult = validationDataset != nil ? try self.validate(validationDataset!) : nil
             
             // end epoch callback
             let isBest = self.onEpochEnd(epoch: epoch, totalEpochs: epochs, trainingResult: trainingResult, valResult: valResult)
