@@ -44,6 +44,13 @@ public enum Device: String {
     case cuda = "cuda"
 }
 
+extension WeightedModule {
+    public mutating func to(_ device: Device) {
+        bias?.to(device)
+        weight.to(device)
+    }
+}
+
 extension PyModule: DataParallelable {
     public typealias DataParallelModuleType = PyModule
     

@@ -23,8 +23,8 @@ public protocol Module {
     func forward(_ x: Tensor) -> Tensor
     
     /// Load state dict from saved module
-    /// - Parameter dict: A `Dictionary` of parameter name and `Tensor`
-    mutating func loadStateDict(_ dict: [String: Tensor])
+    /// - Parameter dict: A `Dictionary` of parameter name and optional value in `PythonObject`
+    mutating func loadStateDict(_ dict: [String: PythonObject?])
     
     /// Set target module into training mode
     func train()
@@ -98,7 +98,7 @@ public struct PyModule: Module {
         return Tensor(modulePtr(x))
     }
     
-    public func loadStateDict(_ dict: [String: Tensor]) {
+    public func loadStateDict(_ dict: [String: PythonObject?]) {
         self.modulePtr.loadStateDict(dict)
     }
     
@@ -191,7 +191,7 @@ public struct Sequential: Module {
         return x
     }
     
-    public mutating func loadStateDict(_ dict: [String : Tensor]) {
+    public mutating func loadStateDict(_ dict: [String : PythonObject?]) {
         let pySequential = PyModule(torch.nn.Sequential(modules))!
         pySequential.loadStateDict(dict)
         modules = pySequential.modules
