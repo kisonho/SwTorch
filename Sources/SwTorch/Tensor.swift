@@ -14,31 +14,6 @@ public enum DType {
     case int8, int16, int32, int64
     case float16, float32, float64
     case uint8
-        
-    /// Convert a PyTorch dtype into `DType`
-    /// - Parameter pyType: The PyTorch dtype in `PythonObject`
-    /// - Returns: A `DType` that mapped with given pyType
-    fileprivate static func fromPyType(pyType: PythonObject) -> DType? {
-        switch pyType {
-        case torch.bool: return .bool
-            
-        case torch.complex32: return .complex32
-        case torch.complex64: return .complex64
-        case torch.complex128: return .complex128
-            
-        case torch.float16: return .float16
-        case torch.float32: return .float32
-        case torch.float64: return .float64
-            
-        case torch.int8: return .int8
-        case torch.int16: return .int16
-        case torch.int32: return .int32
-        case torch.int64: return .int64
-            
-        case torch.uint8: return .uint8
-        default: return nil
-        }
-    }
     
     /// to pytorch dtype
     /// - Returns: A `torch.<dtype>` for the mapping type in `PythonObject`
@@ -82,8 +57,8 @@ public struct Tensor {
     /// - Parameters:
     ///   - value: A PythonConvertible real value of the tensor
     ///   - shape:
-    public init<ValueType: PythonConvertible>(value: ValueType, dtype: DType = .float32) {
-        self.tensorPtr = torch.tensor(value, dtype: dtype.toPyType())
+    public init<ValueType: PythonConvertible>(value: ValueType, dtype: DType? = nil) {
+        self.tensorPtr = torch.tensor(value, dtype: dtype?.toPyType())
 //        self.type = dtype
     }
     
@@ -107,11 +82,29 @@ extension Tensor {
         return Tensor(tensorPtr.argmax(axis: axis))
     }
     
+    /// Concat multiple tensors
+    /// - Parameters:
+    ///   - tensors: The `Array` of `Tensor` to concat
+    ///   - dim: The `Int` of concat dimention
+    /// - Returns: A concatenated `Tensor `
+    public static func concat(_ tensors: Array<Tensor>, dim: Int = 0) -> Tensor {
+        return Tensor(torch.cat(tensors, dim: dim))
+    }
+    
     /// Get the equal value among values of current `Tensor` and another `Tensor`
     /// - Parameter other: Another `Tensor` to be compared
     /// - Returns: A `Tensor` of Bool on all values
     public func equal(_ other: Tensor) -> Tensor {
         return Tensor(torch.eq(self, other))
+    }
+    
+    /// Flattens a tensor according to dims
+    /// - Parameters:
+    ///   - startDim: The `Int` of first dim to flatten
+    ///   - endDim: The `Int` of last dim to flatten
+    /// - Returns: A flattened `Tensor`
+    public func flatten(startDim: Int = 0, endDim: Int = -1) -> Tensor {
+        return Tensor(tensorPtr.flatten(startDim, endDim))
     }
     
     /// calculate the mean
@@ -184,8 +177,9 @@ extension Tensor: CustomStringConvertible {
 }
 
 extension Tensor: DeviceMovable {
-    public mutating func to(_ device: Device) {
-        self.tensorPtr = self.tensorPtr.to(torch.device(device.rawValue))
+    public mutating func to(_ device: Device, id: Int? = nil) {
+        let d = id == nil ? device.rawValue : "\(device.rawValue):\(id!)"
+        self.tensorPtr = self.tensorPtr.to(torch.device(d))
     }
 }
 

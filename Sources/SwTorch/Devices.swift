@@ -20,18 +20,18 @@ public protocol DataParallelable {
 /// Protocol for instances that can be move to a device
 public protocol DeviceMovable {
     /// move current object to target device
-    mutating func to(_ device: Device)
+    mutating func to(_ device: Device, id: Int?)
 }
 
 public extension DeviceMovable {
     /// Move current object to cpu
     mutating func cpu() {
-        self.to(.cpu)
+        self.to(.cpu, id: nil)
     }
     
     /// Move current object to cuda
     mutating func cuda() {
-        self.to(.cuda)
+        self.to(.cuda, id: nil)
     }
 }
 
@@ -44,13 +44,6 @@ public enum Device: String {
     case cuda = "cuda"
 }
 
-extension WeightedModule {
-    public mutating func to(_ device: Device) {
-        bias?.to(device)
-        weight.to(device)
-    }
-}
-
 extension PyModule: DataParallelable {
     public typealias DataParallelModuleType = PyModule
     
@@ -60,15 +53,16 @@ extension PyModule: DataParallelable {
 }
 
 extension PyModule: DeviceMovable {
-    public func to(_ device: Device) {
-        self.modulePtr.to(torch.device(device.rawValue))
+    public func to(_ device: Device, id: Int? = nil) {
+        let d = id == nil ? device.rawValue : "\(device.rawValue):\(id!)"
+        self.modulePtr.to(torch.device(d))
     }
 }
 
-extension Sequential: DataParallelable {
-    public typealias DataParallelModuleType = Sequential
+extension PySequential: DataParallelable {
+    public typealias DataParallelModuleType = PySequential
     
-    public func dataParallel() -> Sequential {
+    public func dataParallel() -> PySequential {
         // initialize data paralleled modules
         var dataParalleledModules = Array<PyModule>()
         
@@ -78,6 +72,26 @@ extension Sequential: DataParallelable {
         }
         
         // create data paralleled Sequential instance
-        return Sequential(dataParalleledModules)
+        return PySequential(dataParalleledModules)
+    }
+}
+
+extension PySequential: DeviceMovable {
+    public mutating func to(_ device: Device, id: Int?) {
+        for m in modules {
+            m.to(device, id: id)
+        }
+    }
+}
+
+/// Function to search all available devices
+/// - Returns: A list of divice indices
+func searchAllDevices() -> Array<Int> {
+    // check if cuda is available
+    if Bool(torch.cuda.is_available()) == true {
+        let numDevices = Int(torch.cuda.device_count())!
+        return Array(0 ..< numDevices)
+    } else {
+        return []
     }
 }

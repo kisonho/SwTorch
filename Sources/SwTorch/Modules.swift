@@ -14,6 +14,10 @@ public protocol Module {
     /// - Parameter file: A `String` of file path to be loaded
     init(_ file: URL)
     
+    /// Deep copy a current module
+    /// - Returns: The same class of current module
+    func copy() -> Self
+    
     /// Set target module into validation mode
     func eval()
     
@@ -90,6 +94,11 @@ public struct PyModule: Module {
         self.modulePtr = torch.load(file.absoluteString)
     }
     
+    public func copy() -> PyModule {
+        let copy = Python.import("copy")
+        return PyModule(copy.deepcopy(modulePtr))!
+    }
+    
     public func eval() {
         modulePtr.eval()
     }
@@ -134,7 +143,7 @@ extension PyModule: PythonConvertible {
 }
 
 /// A sequential module of `PyModules`
-public struct Sequential: Module {
+public struct PySequential: Module {
     /// The modules list
     var modules: Array<PyModule>
     
@@ -171,6 +180,18 @@ public struct Sequential: Module {
                 modules.append(loadedModule)
             }
         }
+    }
+    
+    public func copy() -> PySequential {
+        // initialize copy
+        var newModules = Array<PyModule>()
+        
+        // loop for each module
+        for m in modules {
+            newModules.append(m.copy())
+        }
+        
+        return PySequential(newModules)
     }
     
     public func eval() {

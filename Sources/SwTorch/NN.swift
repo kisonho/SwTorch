@@ -11,49 +11,6 @@ import PythonKit
 fileprivate let Parameter = Python.import("torch.nn.parameter.Parameter")
 fileprivate let F = Python.import("torch.nn.functional")
 
-enum ModuleError: Error {
-    case invalidGroups
-}
-
-/// Supported padding methods
-enum Padding: String {
-    case valid = "valid"
-    case same = "same"
-}
-
-/// A module with bias and weight
-protocol WeightedModule: DeviceMovable, Module {
-    /// The bias `Tensor`
-    var bias: Tensor? { get set }
-    
-    /// The weight `Tensor`
-    var weight: Tensor { get set }
-}
-
-extension WeightedModule {
-    /// Number of input features
-    var inFeatures: Int { get {
-        return weight.shape[1]
-    }}
-    
-    /// Number of output features
-    var outFeatures: Int { get {
-        return weight.shape.first!
-    }}
-    
-    /// get all the parameters in target module
-    var parameters: Array<Tensor> { get {
-        if bias != nil { return [weight, bias!]}
-        else { return [weight] }
-    }}
-    
-    mutating func loadStateDict(_ dict: [String : PythonObject?]) {
-        let bias = dict["bias"]!
-        self.bias = bias != nil ? Tensor(bias!) : nil
-        self.weight = Tensor(dict["weight"]!!)
-    }
-}
-
 /// Main conv2d module
 struct Conv2D: WeightedModule {
     var bias: Tensor? = nil
@@ -63,6 +20,11 @@ struct Conv2D: WeightedModule {
     
     /// The `Int` of input channel groups
     let groups: Int
+    
+    /// Number of input features
+    var inFeatures: Int { get {
+        return weight.shape[1] * groups
+    }}
     
     /// Padding method
     let padding: Padding
@@ -110,7 +72,7 @@ struct Conv2D: WeightedModule {
     ///   - bias: A `Bool` flag of if using bias
     ///   - activation: Activation function that accepts an input `Tensor` and give an output `Tensor`
     /// - Throws: `ModuleError.invalidGroups` when input channels cannot be exactly groupped into groups given
-    init(inChannels: Int, outChannels: Int, kernelSize: (h: Int, w: Int), stride: (h: Int, w: Int) = (h: 1, w: 1), padding: Padding = .same, dilation: Int = 1, groups: Int = 1, bias: Bool = true, activation: ((Tensor) -> Tensor)? = nil) throws {
+    init(inChannels: Int, outChannels: Int, kernelSize: (h: Int, w: Int), stride: (h: Int, w: Int) = (h: 1, w: 1), padding: Padding = .same, dilation: Int = 1, groups: Int = 1, bias: Bool = true) throws {
         // initialize parameters
         guard inChannels % groups == 0 else { throw ModuleError.invalidGroups }
         self.bias = bias == true ? Tensor(Parameter(torch.empty(outChannels))) : nil
@@ -119,6 +81,14 @@ struct Conv2D: WeightedModule {
         self.padding = padding
         self.stride = stride
         self.weight = Tensor(Parameter(torch.empty([outChannels, inChannels / groups, kernelSize.h, kernelSize.w])))
+    }
+    
+    func copy() -> Conv2D {
+        // initialize copy
+        var newConv = try! Conv2D(inChannels: inFeatures, outChannels: outFeatures, kernelSize: (h: weight.shape[2], w: weight.shape[3]), stride: stride, padding: padding, dilation: dilation, groups: groups, bias: bias != nil)
+        newConv.bias = bias != nil ? Tensor(value: bias) : nil
+        newConv.weight = Tensor(value: weight)
+        return newConv
     }
     
     func eval() {
@@ -144,43 +114,137 @@ struct Conv2D: WeightedModule {
     }
 }
 
-extension Conv2D {
-    /// Number of input features
-    var inFeatures: Int { get {
-        return weight.shape[1] * groups
+/// A special module structure for multi-gpus support
+struct DataParalleledModule<M: DeviceMovable & Module>: Module {
+    /// The indices of target devices
+    let devices: Array<Int>
+    
+    /// The target module in `M`
+    public var module: M
+    
+    /// The paralleled modules in devices
+    var parallelModules: Array<M> = []
+    
+    var parameters: Array<Tensor> { get {
+        return module.parameters
     }}
+    
+    public init(_ file: URL) {
+        self.module = M(file)
+        devices = searchAllDevices()
+    }
+    
+    public init(_ module: M, devices: [Int]? = nil) {
+        self.module = module
+        self.devices = devices ?? searchAllDevices()
+    }
+    
+    public func copy() -> DataParalleledModule<M> {
+        return DataParalleledModule(module.copy(), devices: devices)
+    }
+    
+    public func eval() {
+        self.module.eval()
+    }
+    
+    public func forward(_ x: Tensor) -> Tensor {
+        // initialize data parallel
+        guard devices.count > 0 else { return module(x) }
+        let batchPerGPU = Int(ceil(Double(x.shape[0] / devices.count)))
+        let outputDevice = devices[0]
+        var xInGPUs = Array<Tensor>()
+        var yInGPUs = Array<Tensor>()
+        
+        // loop for each device
+        for d in devices {
+            let i = d * batchPerGPU
+            let t = Array(x)[i ..< i + batchPerGPU]
+            xInGPUs.append(Tensor(value: Array(t)))
+        }
+        
+        // forward
+        for (i, xInGPU) in xInGPUs.enumerated() {
+            var y = parallelModules[i](xInGPU)
+            y.to(.cuda, id: outputDevice)
+            yInGPUs.append(y)
+        }
+        
+        let y = Tensor(torch.nn.parallel.data_parallel.gather(yInGPUs, outputDevice, dim: 0))
+        return y
+    }
+    
+    public mutating func loadStateDict(_ dict: [String : PythonObject?]) {
+        self.module.loadStateDict(dict)
+    }
+    
+    public func train() {
+        self.module.train()
+    }
+    
+    public func save(_ file: URL) {
+        self.module.save(file)
+    }
 }
 
-struct Flatten: Module {
+extension DataParalleledModule: DeviceMovable {
+    mutating public func to(_ device: Device, id: Int? = nil) {
+        // initialize moving
+        guard id == nil else { return }
+        parallelModules.removeAll()
+        
+        // copy modules
+        for d in devices {
+            var m = module.copy()
+            m.to(device, id: d)
+            parallelModules.append(m)
+        }
+    }
+}
+
+/// A module to flatten tensor
+public struct Flatten: Module {
     /// Last dim to flatten
     let endDim: Int
     
     /// First dim to flatten
     let startDim: Int
     
-    init(_ file: URL) {
+    public init(_ file: URL) {
         let flatten: [String: PythonObject?] = Dictionary(torch.load(file.absoluteString))!
         self.startDim = Int(flatten["start_dim"]!!)!
         self.endDim = Int(flatten["end_dim"]!!)!
     }
     
-    func eval() {
+    /// Constructor
+    /// - Parameters:
+    ///   - startDim: An `Int` of first dim to flatten
+    ///   - endDim: An `Int` of last dim to flatten
+    public init(startDim: Int = 1, endDim: Int = -1) {
+        self.startDim = startDim
+        self.endDim = endDim
+    }
+    
+    public func copy() -> Flatten {
+        Flatten(startDim: startDim, endDim: endDim)
+    }
+    
+    public func eval() {
         return
     }
     
-    func forward(_ x: Tensor) -> Tensor {
-        Tensor(torch.flatten(x, startDim, endDim))
+    public func forward(_ x: Tensor) -> Tensor {
+        x.flatten(startDim: startDim, endDim: endDim)
     }
     
-    mutating func loadStateDict(_ dict: [String : PythonObject?]) {
+    mutating public func loadStateDict(_ dict: [String : PythonObject?]) {
         return
     }
     
-    func train() {
+    public func train() {
         return
     }
     
-    func save(_ file: URL) {
+    public func save(_ file: URL) {
         let stateDict: [String: PythonObject?] = ["start_dim": PythonObject(startDim),
                                                   "end_dim": PythonObject(endDim)]
         torch.save(stateDict, file.absoluteString)
@@ -215,6 +279,13 @@ struct Linear: WeightedModule {
         self.weight = Tensor(Parameter(torch.empty([outFeatures, inFeatures])))
     }
     
+    func copy() -> Linear {
+        var newLinear = Linear(inFeatures: inFeatures, outFeatures: outFeatures, bias: bias != nil)
+        newLinear.bias = bias != nil ? Tensor(value: bias) : nil
+        newLinear.weight = Tensor(value: weight)
+        return newLinear
+    }
+    
     func eval() {
         return
     }
@@ -231,5 +302,54 @@ struct Linear: WeightedModule {
         let stateDict: [String: PythonObject?] = ["bias": bias != nil ? PythonObject(bias) : nil,
                                                   "weight": PythonObject(weight)]
         torch.save(stateDict, file.absoluteString)
+    }
+}
+
+/// Possible errors occured in modules
+enum ModuleError: Error {
+    case invalidGroups
+}
+
+/// Supported padding methods
+enum Padding: String {
+    case valid = "valid"
+    case same = "same"
+}
+
+/// A module with bias and weight
+protocol WeightedModule: DeviceMovable, Module {
+    /// The bias `Tensor`
+    var bias: Tensor? { get set }
+    
+    /// The weight `Tensor`
+    var weight: Tensor { get set }
+}
+
+extension WeightedModule {
+    /// Number of input features
+    var inFeatures: Int { get {
+        return weight.shape[1]
+    }}
+    
+    /// Number of output features
+    var outFeatures: Int { get {
+        return weight.shape.first!
+    }}
+    
+    /// get all the parameters in target module
+    var parameters: Array<Tensor> { get {
+        if bias != nil { return [weight, bias!]}
+        else { return [weight] }
+    }}
+    
+    mutating func loadStateDict(_ dict: [String : PythonObject?]) {
+        let bias = dict["bias"]!
+        self.bias = bias != nil ? Tensor(bias!) : nil
+        self.weight = Tensor(dict["weight"]!!)
+    }
+    
+    mutating func to(_ device: Device, id: Int? = nil) {
+        bias?.to(device, id: id)
+        weight.to(device, id: id)
     }
 }
