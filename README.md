@@ -37,7 +37,7 @@ class ModelEvaluator: Training {
     ...
 }
 ```
-* Call `train(trainingDatasetLoader: <DataLoader>, epochs: <Int>, initialEpoch: <Int=0>， validationDatasetLoader: <DataLoader?=nil>)` to train the model. The method will return a Dictionary of best validation result among the training epochs, or a `nil` if `validationDatasetLoader` is not given.
+* Call `train(trainingDataset: <DataLoader>, epochs: <Int>, initialEpoch: <Int=0>， validationDataset: <DataLoader?=nil>)` to train the model. The method will return a Dictionary of best validation result among the training epochs, or a `nil` if `validationDataset` is not given.
 
 ## Device Management
 Use `.to(<Device>)` to move a `DeviceMovable` object to target device.
