@@ -1,6 +1,6 @@
 //
-//  Module.swift
-//  Torch
+//  Modules.swift
+//
 //
 //  Created by Kison Ho on 10/28/21.
 //
