@@ -7,6 +7,9 @@
 
 import PythonKit
 
+// import required python module
+fileprivate let F = Python.import("torch.nn.functional")
+
 /// The metrics that calculate cross entropy loss between two `Tensor`
 public class CrossEntropyLoss: Loss {
     var weight: Tensor? = nil
@@ -25,7 +28,7 @@ public class CrossEntropyLoss: Loss {
     }
     
     public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Tensor {
-        Tensor(torch.nn.functional.cross_entropy(yPred, yTrue, weight: weight, ignore_index: ignoreIndex))
+        return Tensor(F.cross_entropy(F.softmax(yPred, axis: 1), yTrue, weight: weight, ignore_index: ignoreIndex))
     }
 }
 
@@ -48,7 +51,7 @@ public class KLDivLoss: Loss {
     
     public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Tensor {
         let reduction = reduce == true ? "batchmean" : "none"
-        return Tensor(torch.nn.functional.kl_div(yPred, yTrue, reduction: reduction, log_target: logTarget))
+        return Tensor(F.kl_div(yPred, yTrue, reduction: reduction, log_target: logTarget))
     }
 }
 
