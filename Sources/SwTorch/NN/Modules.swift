@@ -224,7 +224,7 @@ public struct PySequential: Module {
         
         // add modules
         for (i, m) in modules.enumerated() {
-            pySequential.add_module(i, m)
+            pySequential.add_module(String(i), m)
         }
         
         // save to file
