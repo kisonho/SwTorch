@@ -31,7 +31,7 @@ public extension LrScheduler {
         
         // update lr in optimizer
         for (i, _) in optimizer.paramGroups.enumerated() {
-            optimizer.paramGroups[i]["lr"] = lr
+            optimizer.paramGroups[i]["lr"] = Tensor(value: lr)
         }
     }
 }
@@ -87,7 +87,7 @@ public struct ExponentionLr<OptimizerType: Optimizer>: LrScheduler {
 /// Main optimizer protocol
 public protocol Optimizer {
     /// Parameter groups in an optimizer
-    var paramGroups: Array<[String: Float]> { get set }
+    var paramGroups: Array<[String: Tensor]> { get set }
     
     /// update parameters for one step
     func step()
@@ -98,8 +98,8 @@ public protocol Optimizer {
 
 /// A python optimizer
 public struct PyOptimizer: ConvertibleFromPython, Optimizer {
-    public var paramGroups: Array<[String : Float]> { get {
-        return Array(optimizerPtr.param_groups)!
+    public var paramGroups: Array<[String : Tensor]> { get {
+        return Array<[String : Tensor]>(optimizerPtr.param_groups)!
     } set(newGroups) {
         // loop for each group
         for (i, group) in newGroups.enumerated() {
