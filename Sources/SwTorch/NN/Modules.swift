@@ -73,7 +73,7 @@ public struct PyModule: Module {
     /// The sub `PyModule` inside this module
     var modules: Array<PyModule> {
         get {
-            return Array(modulePtr.modules())!
+            return Array(modulePtr.children())!
         }
     }
     
@@ -161,25 +161,12 @@ public struct PySequential: Module {
     
     /// Constructor
     /// - Parameter modules: An `Array<ModuleType>` of the modules
-    public init(_ modules: Array<PyModule>) {
+    public init(_ modules: Array<PyModule> = []) {
         self.modules = modules
     }
     
     public init(_ file: URL) {
-        // list directories in file URL
-        let os = Python.import("os")
-        let dirs = Array<String>(os.listdir(file.absoluteString))!
-        
-        // initialize loading modules
-        modules = []
-        
-        // loop for each dir
-        for dir in dirs {
-            if dir.prefix(1) != "." {
-                let loadedModule = PyModule(URL(fileURLWithPath: dir))
-                modules.append(loadedModule)
-            }
-        }
+        self.modules = PyModule(file).modules
     }
     
     public func copy() -> PySequential {
@@ -228,7 +215,7 @@ public struct PySequential: Module {
         }
         
         // save to file
-        torch.save(pySequential, file.description)
+        PyModule(pySequential)!.save(file)
     }
     
     public func train() {
