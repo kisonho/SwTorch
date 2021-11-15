@@ -25,7 +25,21 @@ public class CrossEntropyLoss: Loss {
     }
     
     public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Tensor {
-        return Tensor(torch.nn.functional.cross_entropy(yPred, yTrue, weight: weight, ignore_index: ignoreIndex))
+        Tensor(torch.nn.functional.cross_entropy(yPred, yTrue, weight: weight, ignore_index: ignoreIndex))
+    }
+}
+
+/// The metrics that calculate the Kullback-Leibler divergence loss
+public class KLDivLoss: Loss {
+    /// A `Bool` flag of if passing the log space
+    var logTarget = false
+    
+    /// A `Bool` flag of if averaging by minibatch
+    var reduce = true
+    
+    public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Tensor {
+        let reduction = reduce == true ? "mean" : "none"
+        return Tensor(torch.nn.functional.kl_div(yPred, yTrue, reduction: reduction, log_target: logTarget))
     }
 }
 
