@@ -145,9 +145,9 @@ extension PyModule: PythonConvertible {
 /// A sequential module of `PyModules`
 public struct PySequential: Module {
     /// The modules list
-    var modules: Array<PyModule>
+    public var modules: Array<PyModule>
     
-    var parameters: Array<Tensor> { get {
+    public var parameters: Array<Tensor> { get {
         // initialize getting parameters
         var params = Array<Tensor>()
         
