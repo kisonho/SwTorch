@@ -63,8 +63,8 @@ public struct Tensor {
     }
     
     /// backward function
-    public func backward() {
-        self.tensorPtr.backward()
+    public func backward(gradient: Tensor? = nil, retainGraph: Bool = false, createGraph: Bool = false, inputs: Array<Tensor>? = nil) {
+        self.tensorPtr.backward(gradient, retrain_graph: retainGraph, create_graph: createGraph, inputs: inputs)
     }
 }
 

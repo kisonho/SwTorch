@@ -47,7 +47,7 @@ public class KLDivLoss: Loss {
     }
     
     public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Tensor {
-        let reduction = reduce == true ? "mean" : "none"
+        let reduction = reduce == true ? "batchmean" : "none"
         return Tensor(torch.nn.functional.kl_div(yPred, yTrue, reduction: reduction, log_target: logTarget))
     }
 }
