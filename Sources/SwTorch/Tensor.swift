@@ -55,16 +55,21 @@ public struct Tensor {
     
     /// Constructor
     /// - Parameters:
-    ///   - value: A PythonConvertible real value of the tensor
-    ///   - shape:
+    ///   - value: A `PythonConvertible` real value of the tensor
+    ///   - dtype: the target `DType` of this `Tensor`
     public init<ValueType: PythonConvertible>(value: ValueType, dtype: DType? = nil) {
         self.tensorPtr = torch.tensor(value, dtype: dtype?.toPyType())
 //        self.type = dtype
     }
     
     /// backward function
+    /// - Parameters:
+    ///   - gradient: An optional gradient `Tensor`
+    ///   - retainGraph: A `Bool` flag of the graph used to compute the grads will be freed
+    ///   - createGraph: A `Bool` flag of graph of the derivative will be constructed
+    ///   - inputs: An optional `Array<Tensor>` of the gradient will be accumulated into
     public func backward(gradient: Tensor? = nil, retainGraph: Bool = false, createGraph: Bool = false, inputs: Array<Tensor>? = nil) {
-        self.tensorPtr.backward(gradient, retrain_graph: retainGraph, create_graph: createGraph, inputs: inputs)
+        self.tensorPtr.backward(gradient, retain_graph: retainGraph, create_graph: createGraph, inputs: inputs)
     }
 }
 
