@@ -73,7 +73,7 @@ public struct ExponentionLr<OptimizerType: Optimizer>: LrScheduler {
     ///   - optimizer: An `OptimizerType` to be updated
     ///   - gamma: A `Float` of exponention value
     ///   - initialLr: A `Float` of initial learning rate
-    init(_ optimizer: OptimizerType, gamma: Float, initialLr: Float) {
+    public init(_ optimizer: OptimizerType, gamma: Float, initialLr: Float) {
         self.gamma = gamma
         self.lr = initialLr
         self.optimizer = optimizer

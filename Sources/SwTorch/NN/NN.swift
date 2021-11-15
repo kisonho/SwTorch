@@ -9,7 +9,7 @@ import Foundation
 import PythonKit
 
 fileprivate let Parameter = Python.import("torch.nn.parameter.Parameter")
-fileprivate let F = Python.import("torch.nn.functional")
+fileprivate let functional = Python.import("torch.nn.functional")
 
 /// Main conv2d module
 struct Conv2D: WeightedModule {
