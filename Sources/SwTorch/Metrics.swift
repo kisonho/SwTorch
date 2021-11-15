@@ -37,6 +37,15 @@ public class KLDivLoss: Loss {
     /// A `Bool` flag of if averaging by minibatch
     var reduce = true
     
+    /// Constructor
+    /// - Parameters:
+    ///   - reduce: A `Bool` flag of if averaging by minibatch
+    ///   - logTarget: A `Bool` flag of if passing the log space
+    public init(reduce: Bool = true, logTarget: Bool = false) {
+        self.logTarget = logTarget
+        self.reduce = reduce
+    }
+    
     public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Tensor {
         let reduction = reduce == true ? "mean" : "none"
         return Tensor(torch.nn.functional.kl_div(yPred, yTrue, reduction: reduction, log_target: logTarget))
