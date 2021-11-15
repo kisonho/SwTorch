@@ -99,6 +99,7 @@ public protocol Optimizer {
 /// A python optimizer
 public struct PyOptimizer: ConvertibleFromPython, Optimizer {
     public var paramGroups: Array<[String : Tensor]> { get {
+        print(optimizerPtr.param_groups)
         return Array<[String : Tensor]>(optimizerPtr.param_groups)!
     } set(newGroups) {
         // loop for each group
