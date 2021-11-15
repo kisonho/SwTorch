@@ -2,7 +2,7 @@
 PyTorch training/evaluation wrap for Swift.
 ---
 ## Requirements
-*[PyTorch](https://pytorch.org) with python environment set up to `PYTHON_LIBRARY`
+*The latest LTS version of [PyTorch](https://pytorch.org) with python environment set up to `PYTHON_LIBRARY`
 * Add packages:
 ```
 .package(url: "https://github.com/kisonho/SwTorch.git", branch: "main"),
