@@ -228,7 +228,7 @@ public struct PySequential: Module {
         }
         
         // save to file
-        pySequential.save(file)
+        torch.save(pySequential, file)
     }
     
     public func train() {
