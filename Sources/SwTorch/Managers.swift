@@ -145,7 +145,6 @@ public extension Training {
                 // extract example
                 var xTrain = Tensor(example.tuple2.0)
                 var yTrain = Tensor(example.tuple2.1)
-                print("\(xTrain.shape),\(yTrain)")
                 
                 // move to device
                 if useMultiGPUs != true { xTrain.to(device) }
