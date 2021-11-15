@@ -24,13 +24,12 @@ public protocol Evaluating {
     /// The real model to run
     var model: ModuleType { get set }
     
-    /// calculate metrics
-    /// - Returns: A `Dictionary` of metrics
-    func calculateMetrics(yTrue: Tensor, yPred: Tensor) -> [String: Float]
-    
-    /// calculate loss
-    /// - Returns: A `Tensor` of loss
-    func calculateLoss(yTrue: Tensor, yPred: Tensor) -> Tensor
+    /// Validation for a single step
+    /// - Parameters:
+    ///   - input: A torch.Tensor for input
+    ///   - label: A torch.Tensor for label
+    /// - Returns: A Dictionary of result of validation
+    func valStep(_ xTest: Tensor, _ yTest: Tensor) -> [String: Float]
 }
 
 public extension Evaluating {
@@ -82,22 +81,6 @@ public extension Evaluating {
         // reset model mode
         return valResult
     }
-    
-    /// Validation for a single step
-    /// - Parameters:
-    ///   - input: A torch.Tensor for input
-    ///   - label: A torch.Tensor for label
-    /// - Returns: A Dictionary of result of validation
-    func valStep(_ xTest: Tensor, _ yTest: Tensor) -> [String: Float] {
-        // forward pass
-        let y = model(xTest)
-        let loss = calculateLoss(yTrue: yTest, yPred: y)
-        var metrics = calculateMetrics(yTrue: yTest, yPred: y)
-        metrics["loss"] = Float(loss)!
-        
-        // backward pass
-        return metrics
-    }
 }
 
 /// Main Training Protocol
@@ -123,6 +106,13 @@ public protocol Training: Evaluating {
     /// On every epoch ends
     /// - Returns: A Bool of flag if this result is best
     func onEpochEnd(epoch: Int, totalEpochs: Int, trainingResult: [String: Float], valResult: [String: Float]?) -> Bool
+    
+    /// Train for one step
+    /// - Parameters:
+    ///   - input: A torch.Tensor for input
+    ///   - label: A torch.Tensor for label
+    /// - Returns: A Dictionary of results
+    func trainStep(_ xTrain: Tensor, _ yTrain: Tensor) -> [String: Float]
 }
 
 public extension Training {
@@ -155,6 +145,7 @@ public extension Training {
                 // extract example
                 var xTrain = Tensor(example.tuple2.0)
                 var yTrain = Tensor(example.tuple2.1)
+                print("\(xTrain.shape),\(yTrain)")
                 
                 // move to device
                 if useMultiGPUs != true { xTrain.to(device) }
@@ -198,24 +189,5 @@ public extension Training {
         }
         
         return bestResult
-    }
-    
-    /// Train for one step
-    /// - Parameters:
-    ///   - input: A torch.Tensor for input
-    ///   - label: A torch.Tensor for label
-    /// - Returns: A Dictionary of results
-    func trainStep(_ xTrain: Tensor, _ yTrain: Tensor) -> [String: Float] {
-        // forward pass
-        optimizer.zeroGrad()
-        let y = model(xTrain)
-        let loss = calculateLoss(yTrue: yTrain, yPred: y)
-        var metrics = calculateMetrics(yTrue: yTrain, yPred: y)
-        metrics["loss"] = Float(loss)!
-        
-        // backward pass
-        loss.backward()
-        optimizer.step()
-        return metrics
     }
 }
