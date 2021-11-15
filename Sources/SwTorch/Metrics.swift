@@ -11,7 +11,7 @@ import PythonKit
 public class CrossEntropyLoss: Loss {
     var weight: Tensor? = nil
     
-    var ignoreIndex: Int? = nil
+    var ignoreIndex: Int = -100
     
     public init() {}
     
