@@ -28,7 +28,7 @@ public class CrossEntropyLoss: Loss {
     }
     
     public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Tensor {
-        return Tensor(F.cross_entropy(F.softmax(yPred, axis: 1), yTrue, weight: weight, ignore_index: ignoreIndex))
+        return Tensor(F.cross_entropy(F.softmax(yPred, dim: 1), yTrue, weight: weight, ignore_index: ignoreIndex))
     }
 }
 
