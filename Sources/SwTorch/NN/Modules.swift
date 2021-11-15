@@ -219,7 +219,15 @@ public struct PySequential: Module {
     }
     
     public func save(_ file: URL) {
-        let pySequential = PyModule(torch.nn.Sequential(modules))!
+        // initialize sequential pointer
+        let pySequential = torch.nn.Sequential()
+        
+        // add modules
+        for m in modules {
+            pySequential.add_module(m)
+        }
+        
+        // save to file
         pySequential.save(file)
     }
     
