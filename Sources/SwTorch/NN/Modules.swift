@@ -223,8 +223,8 @@ public struct PySequential: Module {
         let pySequential = torch.nn.Sequential()
         
         // add modules
-        for m in modules {
-            pySequential.add_module(m)
+        for (i, m) in modules.enumerated() {
+            pySequential.add_module(i, m)
         }
         
         // save to file
