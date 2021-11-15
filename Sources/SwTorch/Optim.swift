@@ -26,13 +26,7 @@ public protocol LrScheduler {
 public extension LrScheduler {
     /// Call for each step
     mutating func step() {
-        // get updated lr
-        lr = updateLr()
-        
-        // update lr in optimizer
-        for (i, _) in optimizer.paramGroups.enumerated() {
-            optimizer.paramGroups[i]["lr"] = Tensor(value: lr)
-        }
+        self.optimizer.lr = updateLr()
     }
 }
 
@@ -87,7 +81,7 @@ public struct ExponentionLr<OptimizerType: Optimizer>: LrScheduler {
 /// Main optimizer protocol
 public protocol Optimizer {
     /// Parameter groups in an optimizer
-    var paramGroups: Array<[String: Tensor]> { get set }
+    var lr: Float { get set }
     
     /// update parameters for one step
     func step()
@@ -98,23 +92,25 @@ public protocol Optimizer {
 
 /// A python optimizer
 public struct PyOptimizer: ConvertibleFromPython, Optimizer {
-    public var paramGroups: Array<[String : Tensor]> { get {
-        print(optimizerPtr.param_groups)
-        return Array<[String : Tensor]>(optimizerPtr.param_groups)!
-    } set(newGroups) {
+    public var lr: Float { get {
+        return lrPointer
+    } set(newLr) {
+        lrPointer = newLr
+        
         // loop for each group
-        for (i, group) in newGroups.enumerated() {
-            for (key, value) in group {
-                optimizerPtr.param_groups[i][key] = PythonObject(value)
-            }
+        for g in optimizerPtr.param_groups {
+            g["lr"] = PythonObject(lr)
         }
     }}
+    
+    private var lrPointer: Float
     
     /// The pointer of torch.optim.Optimizer
     var optimizerPtr: PythonObject
     
     public init?(_ object: PythonObject) {
         self.optimizerPtr = object
+        lrPointer = Float(optimizerPtr.param_groups[0]["lr"])!
     }
     
     public func step() {
