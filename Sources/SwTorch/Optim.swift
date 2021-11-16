@@ -12,6 +12,9 @@ public protocol LrScheduler {
     /// The optimizer type
     associatedtype OptimizerType: Optimizer
     
+    /// The current step index
+    var currentStep: Int { get set }
+    
     /// Current learning rate
     var lr: Float { get set }
     
@@ -27,10 +30,13 @@ public extension LrScheduler {
     /// Call for each step
     mutating func step() {
         self.optimizer.lr = updateLr()
+        self.currentStep += 1
     }
 }
 
 public struct ConstantLr<OptimizerType: Optimizer>: LrScheduler {
+    public var currentStep: Int = 0
+    
     public var lr: Float
     
     public var optimizer: OptimizerType
@@ -55,6 +61,8 @@ public struct ConstantLr<OptimizerType: Optimizer>: LrScheduler {
 
 /// Exponention learning rate scheduler
 public struct ExponentionLr<OptimizerType: Optimizer>: LrScheduler {
+    public var currentStep: Int = 0
+    
     /// The exponential gamma
     var gamma: Float
     
