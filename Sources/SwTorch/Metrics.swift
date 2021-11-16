@@ -10,10 +10,22 @@ import PythonKit
 // import required python modules
 let F = Python.import("torch.nn.functional")
 
-/// The metrics that calculate cross entropy loss between two `Tensor`
-public class CrossEntropyLoss: Loss {
+/// The metrics that calculate BCE with logits loss between two `Tensor`
+public class BCEWithLogitsLoss: Loss {
+    /// A manual rescaling weight
     var weight: Tensor? = nil
     
+    public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Tensor {
+        return Tensor(F.binary_cross_entropy_with_logits(yPred, yTrue, weight))
+    }
+}
+
+/// The metrics that calculate cross entropy loss between two `Tensor`
+public class CrossEntropyLoss: Loss {
+    /// A manual rescaling weight
+    var weight: Tensor? = nil
+    
+    /// The target value that is ignored and does not contribute to the input gradient
     var ignoreIndex: Int = -100
     
     public init() {}
