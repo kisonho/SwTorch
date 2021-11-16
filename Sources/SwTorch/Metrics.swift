@@ -15,6 +15,8 @@ public class BCEWithLogitsLoss: Loss {
     /// A manual rescaling weight
     var weight: Tensor? = nil
     
+    public init() {}
+    
     public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Tensor {
         return Tensor(F.binary_cross_entropy_with_logits(yPred, yTrue, weight))
     }
