@@ -91,7 +91,7 @@ public struct PyModule: Module {
     }}
     
     public init(_ file: URL) {
-        self.modulePtr = torch.load(file.absoluteString)
+        self.modulePtr = torch.load(file.absoluteString.replacingOccurrences(of: "file://", with: ""))
     }
     
     public func copy() -> PyModule {
@@ -123,10 +123,10 @@ public struct PyModule: Module {
         let dir = file.deletingLastPathComponent()
         
         // create directory
-        os.makedirs(dir.absoluteString, exist_ok: true)
+        os.makedirs(dir.absoluteString.replacingOccurrences(of: "file://", with: ""), exist_ok: true)
         
         // save module
-        torch.save(modulePtr, file.absoluteString)
+        torch.save(modulePtr, file.absoluteString.replacingOccurrences(of: "file://", with: ""))
     }
 }
 
