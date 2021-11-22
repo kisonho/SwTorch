@@ -15,15 +15,15 @@ public protocol LrScheduler {
     /// The current step index
     var currentStep: Int { get set }
     
-    /// Current learning rate
-    var lr: Float { get set }
+    /// Initial learning rate
+    var lr: Double { get set }
     
     /// The optimizer where learning rate is
     var optimizer: OptimizerType { get set }
     
     /// Update the learning rate for each step
-    /// - Returns: A `Float` of updated learning rate
-    func updateLr() -> Float
+    /// - Returns: A `Double` of updated learning rate
+    func updateLr() -> Double
 }
 
 public extension LrScheduler {
@@ -37,7 +37,7 @@ public extension LrScheduler {
 public struct ConstantLr<OptimizerType: Optimizer>: LrScheduler {
     public var currentStep: Int = 0
     
-    public var lr: Float
+    public var lr: Double
     
     public var optimizer: OptimizerType
     
@@ -45,12 +45,12 @@ public struct ConstantLr<OptimizerType: Optimizer>: LrScheduler {
     /// - Parameters:
     ///   - optimizer: The optimizer to be updated
     ///   - lr: target learning rate
-    init(_ optimizer: OptimizerType, lr: Float) {
+    init(_ optimizer: OptimizerType, lr: Double) {
         self.lr = lr
         self.optimizer = optimizer
     }
     
-    public func updateLr() -> Float {
+    public func updateLr() -> Double {
         return lr
     }
     
@@ -64,24 +64,24 @@ public struct ExponentionLr<OptimizerType: Optimizer>: LrScheduler {
     public var currentStep: Int = 0
     
     /// The exponential gamma
-    var gamma: Float
+    var gamma: Double
     
-    public var lr: Float
+    public var lr: Double
     
     public var optimizer: OptimizerType
     
     /// Constructor
     /// - Parameters:
     ///   - optimizer: An `OptimizerType` to be updated
-    ///   - gamma: A `Float` of exponention value
-    ///   - initialLr: A `Float` of initial learning rate
-    public init(_ optimizer: OptimizerType, gamma: Float, initialLr: Float) {
+    ///   - gamma: A `Double` of exponention value
+    ///   - initialLr: A `Double` of initial learning rate
+    public init(_ optimizer: OptimizerType, gamma: Double, initialLr: Double) {
         self.gamma = gamma
         self.lr = initialLr
         self.optimizer = optimizer
     }
     
-    public func updateLr() -> Float {
+    public func updateLr() -> Double {
         return lr * gamma
     }
 }
@@ -89,7 +89,7 @@ public struct ExponentionLr<OptimizerType: Optimizer>: LrScheduler {
 /// Main optimizer protocol
 public protocol Optimizer {
     /// Parameter groups in an optimizer
-    var lr: Float { get set }
+    var lr: Double { get set }
     
     /// update parameters for one step
     func step()
@@ -100,7 +100,7 @@ public protocol Optimizer {
 
 /// A python optimizer
 public struct PyOptimizer: ConvertibleFromPython, Optimizer {
-    public var lr: Float { get {
+    public var lr: Double { get {
         return lrPointer
     } set(newLr) {
         lrPointer = newLr
@@ -111,14 +111,14 @@ public struct PyOptimizer: ConvertibleFromPython, Optimizer {
         }
     }}
     
-    private var lrPointer: Float
+    private var lrPointer: Double
     
     /// The pointer of torch.optim.Optimizer
     var optimizerPtr: PythonObject
     
     public init?(_ object: PythonObject) {
         self.optimizerPtr = object
-        lrPointer = Float(optimizerPtr.param_groups[0]["lr"])!
+        lrPointer = Double(optimizerPtr.param_groups[0]["lr"])!
     }
     
     public func step() {
