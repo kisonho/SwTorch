@@ -112,6 +112,12 @@ extension Tensor {
         return Tensor(tensorPtr.flatten(startDim, endDim))
     }
     
+    /// Check is nan in tensor
+    /// - Returns: A `Tensor` of `Bool` flag if target value is nan
+    public func isnan() -> Tensor {
+        return Tensor(self.tensorPtr.isnan())
+    }
+    
     /// calculate the mean
     /// - Parameter axis: `Int` of axis of mean
     /// - Returns: A `Tensor` of mean of current tensor
