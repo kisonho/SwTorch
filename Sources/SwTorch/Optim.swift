@@ -108,6 +108,7 @@ public struct PyOptimizer: ConvertibleFromPython, Optimizer {
         // loop for each group
         for g in optimizerPtr.param_groups {
             g["lr"] = PythonObject(newLr)
+            print("Set learning rate in \(g) to \(newLr)")
         }
     }}
     
