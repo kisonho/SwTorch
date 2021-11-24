@@ -106,7 +106,7 @@ public struct PyOptimizer: ConvertibleFromPython, Optimizer {
         lrPointer = newLr
         
         // loop for each group
-        for (i, g) in optimizerPtr.param_groups.enumerated() {
+        for g in optimizerPtr.param_groups {
             g["lr"] = PythonObject(newLr)
         }
     }}
