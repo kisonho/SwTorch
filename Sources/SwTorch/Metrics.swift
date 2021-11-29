@@ -8,7 +8,7 @@
 import PythonKit
 
 // import required python modules
-let F = Python.import("torch.nn.functional")
+fileprivate let F = Python.import("torch.nn.functional")
 
 /// The metrics that calculate BCE with logits loss between two `Tensor`
 public class BCEWithLogitsLoss: Loss {
