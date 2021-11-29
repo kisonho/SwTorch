@@ -95,7 +95,7 @@ public protocol Optimizer {
     func step()
     
     /// Clear optimizer gradient
-    func zeroGrad()
+    func zeroGrad(setToNone: Bool)
 }
 
 /// A python optimizer
@@ -125,8 +125,8 @@ public struct PyOptimizer: ConvertibleFromPython, Optimizer {
         self.optimizerPtr.step()
     }
     
-    public func zeroGrad() {
-        self.optimizerPtr.zero_grad()
+    public func zeroGrad(setToNone: Bool = false) {
+        self.optimizerPtr.zero_grad(setToNone: setToNone)
     }
 }
 

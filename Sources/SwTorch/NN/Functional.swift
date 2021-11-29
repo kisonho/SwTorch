@@ -10,6 +10,11 @@ import PythonKit
 /// core python library
 fileprivate let F = Python.import("torch.nn.functional")
 
+/// Log softmax function
+/// - Parameters:
+///   - input: input `Tensor`
+///   - dim: The `Int` of operation dimension
+/// - Returns: The log softmax result `Tensor`   
 public func logSoftmax(_ input: Tensor, dim: Int = 0) -> Tensor {
     return Tensor(F.log_softmax(input, dim: dim))
 }
