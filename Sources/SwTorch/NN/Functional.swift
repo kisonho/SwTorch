@@ -15,6 +15,6 @@ fileprivate let F = Python.import("torch.nn.functional")
 ///   - input: input `Tensor`
 ///   - dim: The `Int` of operation dimension
 /// - Returns: The softmax result `Tensor`
-func softmax(_ input: Tensor, dim: Int = 0) -> Tensor {
+public func softmax(_ input: Tensor, dim: Int = 0) -> Tensor {
     return Tensor(F.softmax(input, dim: dim))
 }
