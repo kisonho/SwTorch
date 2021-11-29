@@ -139,8 +139,8 @@ extension Tensor {
     /// calculate the mean
     /// - Parameter axis: `Int` of axis of mean
     /// - Returns: A `Tensor` of mean of current tensor
-    public func mean(axis: Int? = nil) -> Tensor {
-        return Tensor(self.tensorPtr.mean(axis: axis))
+    public func mean(dim: Int? = nil) -> Tensor {
+        return Tensor(self.tensorPtr.mean(dim: dim))
     }
     
     /// Reshape current tensor
@@ -152,8 +152,8 @@ extension Tensor {
     
     /// Sum along the axis
     /// - Parameter axis: `Int` of axis of sum
-    public func sum(axis: Int? = nil) -> Tensor {
-        return Tensor(self.tensorPtr.sum(axis: axis))
+    public func sum(dim: Int? = nil) -> Tensor {
+        return Tensor(self.tensorPtr.sum(dim: dim))
     }
     
     /// Cast current tensor to a target dtype

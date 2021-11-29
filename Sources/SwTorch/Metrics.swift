@@ -93,7 +93,7 @@ public class Accuracy: Metrics {
     public init() {}
     
     public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
-        return Float(yTrue.equal(yPred).to(dtype: .float32).mean(axis: 0))!
+        return Float(yTrue.equal(yPred).to(dtype: .float32).mean())!
     }
 }
 
