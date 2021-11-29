@@ -1,0 +1,20 @@
+//
+//  File.swift
+//  
+//
+//  Created by Kison Ho on 11/29/21.
+//
+
+import PythonKit
+
+/// core python library
+fileprivate let F = Python.import("torch.nn.functional")
+
+/// Softmax function
+/// - Parameters:
+///   - input: input `Tensor`
+///   - dim: The `Int` of operation dimension
+/// - Returns: The softmax result `Tensor`
+func softmax(_ input: Tensor, dim: Int = 0) -> Tensor {
+    return Tensor(F.softmax(input, dim: dim))
+}
