@@ -101,8 +101,8 @@ extension Tensor {
     /// Get the max index in axis
     /// - Parameter axis: `Int` of axis of argmax
     /// - Returns: A `Tensor` of argmax of current tensor
-    public func argmax(axis: Int? = nil) -> Tensor {
-        return Tensor(tensorPtr.argmax(axis: axis))
+    public func argmax(dim: Int? = nil) -> Tensor {
+        return Tensor(tensorPtr.argmax(dim: dim))
     }
     
     /// Concat multiple tensors

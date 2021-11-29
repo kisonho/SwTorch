@@ -136,10 +136,10 @@ extension PyMetrics: ConvertibleFromPython {
 /// The metrics that calculate accuracy between a real label `Tensor` and logits `Tensor`
 public final class SparseCategoricalAccuracy: Accuracy {
     /// The axis of prediction
-    var axis: Int = 1
+    var dim: Int = 1
     
     public override func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
-        let y = yPred.argmax(axis: axis)
+        let y = yPred.argmax(dim: dim)
         return super.callAsFunction(yTrue: yTrue, yPred: y)
     }
 }
