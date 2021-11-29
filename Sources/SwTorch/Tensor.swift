@@ -136,6 +136,11 @@ extension Tensor {
         return Tensor(self.tensorPtr.isnan())
     }
     
+    /// calculate log of current tensor
+    public func log() -> Tensor {
+        return Tensor(self.tensorPtr.log())
+    }
+    
     /// calculate the mean
     /// - Parameter dim: `Int` of dimension of mean
     /// - Returns: A `Tensor` of mean of current tensor
