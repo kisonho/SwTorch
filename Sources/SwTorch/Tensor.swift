@@ -98,10 +98,10 @@ extension Tensor {
         return Tensor(tensorPtr.abs())
     }
     
-    /// Get the max index in axis
-    /// - Parameter axis: `Int` of axis of argmax
+    /// Get the max index in dimension
+    /// - Parameter dim: `Int` of dimension of argmax
     /// - Returns: A `Tensor` of argmax of current tensor
-    public func argmax(dim: Int? = nil) -> Tensor {
+    public func argmax(dim: Int = 0) -> Tensor {
         return Tensor(tensorPtr.argmax(dim: dim))
     }
     
@@ -137,9 +137,9 @@ extension Tensor {
     }
     
     /// calculate the mean
-    /// - Parameter axis: `Int` of axis of mean
+    /// - Parameter dim: `Int` of dimension of mean
     /// - Returns: A `Tensor` of mean of current tensor
-    public func mean(dim: Int? = nil) -> Tensor {
+    public func mean(dim: Int = 0) -> Tensor {
         return Tensor(self.tensorPtr.mean(dim: dim))
     }
     
@@ -150,9 +150,9 @@ extension Tensor {
         return Tensor(self.tensorPtr.reshape(shape))
     }
     
-    /// Sum along the axis
-    /// - Parameter axis: `Int` of axis of sum
-    public func sum(dim: Int? = nil) -> Tensor {
+    /// Sum along dimension
+    /// - Parameter dim: `Int` of dimension of sum
+    public func sum(dim: Int = 0) -> Tensor {
         return Tensor(self.tensorPtr.sum(dim: dim))
     }
     
