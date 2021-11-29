@@ -12,17 +12,14 @@ public let torch = Python.import("torch")
 
 /// Main Validation Protocol
 public protocol Evaluating {
-    /// The type of model
-    associatedtype ModuleType: Module
-    
     /// Flag of if multiple GPUs will be used for the model
     var useMultiGPUs: Bool { get }
     
     /// The target device of model
     var device: Device { get }
     
-    /// The real model to run
-    var model: ModuleType { get set }
+    /// On validation starts
+    func onValStart()
     
     /// Validation for a single step
     /// - Parameters:
@@ -38,8 +35,8 @@ public extension Evaluating {
     /// - Returns: A Dictionary of validation results
     func validate(_ dataset: PythonObject) throws -> [String: Float] {
         // no gradients
+        onValStart()
         var no_grad = NoGrad()
-        model.eval()
         
         // validate
         let valResultList: [String: Array<Float>] = try with(&no_grad) { _ in
@@ -75,7 +72,7 @@ public extension Evaluating {
         
         // calculate mean
         for (key, m) in valResultList {
-            valResult[key] = Float(torch.Tensor(m).mean())!
+            valResult[key] = Float(Tensor(value: m).mean())!
         }
         
         // reset model mode
@@ -85,18 +82,6 @@ public extension Evaluating {
 
 /// Main Training Protocol
 public protocol Training: Evaluating {
-    /// The learning rate scheduler type
-    associatedtype LrSchedulerType: LrScheduler
-    
-    /// The optimizer type
-    associatedtype OptimizerType: Optimizer
-    
-    /// The learning rate schedule which updates the learning rate in optimizer
-    var lrScheduler: LrSchedulerType? { get set }
-    
-    /// The optimizer to update model
-    var optimizer: OptimizerType { get }
-    
     /// On every batch ends
     func onBatchEnd(batch: Int, result: [String: Float])
     
@@ -138,7 +123,6 @@ public extension Training {
             // initialize epoch
             var resultList: [String: Array<Float>] = [:]
             onEpochStart(epoch: epoch, totalEpochs: epochs)
-            model.train()
             
             // batch loop
             for (batch, example) in trainingDataset.enumerated() {
@@ -171,7 +155,7 @@ public extension Training {
             
             // calculate mean
             for (key, m) in resultList {
-                trainingResult[key] = Float(torch.Tensor(m).mean())!
+                trainingResult[key] = Float(Tensor(value: m).mean())!
             }
             
             // validation
@@ -182,9 +166,6 @@ public extension Training {
             
             // set best result
             bestResult = isBest == true ? valResult : bestResult
-            
-            // step lr scheduler
-            lrScheduler?.step()
         }
         
         return bestResult

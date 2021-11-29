@@ -71,6 +71,24 @@ public struct Tensor {
     public func backward(gradient: Tensor? = nil, retainGraph: Bool = false, createGraph: Bool = false, inputs: Array<Tensor>? = nil) {
         self.tensorPtr.backward(gradient, retain_graph: retainGraph, create_graph: createGraph, inputs: inputs)
     }
+    
+    /// Initialize a `Tensor` with all ones elements
+    /// - Parameters:
+    ///   - shape: An shape of `Tensor` in `Array<Int>`
+    ///   - dtype: An optional `DType`
+    /// - Returns: A `Tensor` with all ones in given shape and dtype
+    public static func ones(_ shape: Array<Int>, dtype: DType? = nil) -> Tensor {
+        return Tensor(torch.ones(shape, dtype?.toPyType()))
+    }
+    
+    /// Initialize a `Tensor` with all zeros elements
+    /// - Parameters:
+    ///   - shape: An shape of `Tensor` in `Array<Int>`
+    ///   - dtype: An optional `DType`
+    /// - Returns: A `Tensor` with all zeros in given shape and dtype
+    public static func zeros(_ shape: Array<Int>, dtype: DType? = nil) -> Tensor {
+        return Tensor(torch.zeros(shape, dtype?.toPyType()))
+    }
 }
 
 extension Tensor {
