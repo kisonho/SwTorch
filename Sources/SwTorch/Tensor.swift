@@ -136,16 +136,23 @@ extension Tensor {
         return Tensor(self.tensorPtr.isnan())
     }
     
-    /// calculate log of current tensor
+    /// Calculate log of current tensor
     public func log() -> Tensor {
         return Tensor(self.tensorPtr.log())
     }
     
-    /// calculate the mean
+    /// Calculate the mean
     /// - Parameter dim: `Int` of dimension of mean
     /// - Returns: A `Tensor` of mean of current tensor
     public func mean(dim: Int = 0) -> Tensor {
         return Tensor(self.tensorPtr.mean(dim: dim))
+    }
+    
+    /// Calculate the matrix norm or vector norm of current tensor.
+    /// - Parameter dim: `Int` of dimension of mean
+    /// - Returns: A `Tensor` of matrix norm of current tensor
+    public func norm(dim: Int = 0) -> Tensor {
+        return Tensor(self.tensorPtr.norm(dim: dim))
     }
     
     /// Reshape current tensor
