@@ -126,7 +126,7 @@ public struct PyOptimizer: ConvertibleFromPython, Optimizer {
     }
     
     public func zeroGrad(setToNone: Bool = false) {
-        self.optimizerPtr.zero_grad(setToNone: setToNone)
+        self.optimizerPtr.zero_grad(set_to_none: setToNone)
     }
 }
 
