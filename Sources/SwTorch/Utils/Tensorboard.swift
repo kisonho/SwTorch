@@ -20,7 +20,7 @@ public class SummaryWriter: Enterable {
     
     /// Constructor
     /// - Parameter logDir: An optional `URL` of the target writer
-    init(logDir: URL? = nil) {
+    public init(logDir: URL? = nil) {
         self.logDir = logDir
     }
     
@@ -29,7 +29,7 @@ public class SummaryWriter: Enterable {
     ///   - name: A `String` of scalar name
     ///   - data: A `Float` of data to be recorded
     ///   - iter: An `Int` of iteration index
-    func addScalar(_ name: String, _ data: Float, iter: Int) {
+    public func addScalar(_ name: String, _ data: Float, iter: Int) {
         writerPtr!.add_scalar(name, data, iter)
     }
     
@@ -38,7 +38,7 @@ public class SummaryWriter: Enterable {
     ///   - mainTag: A `String` of scalar name
     ///   - data: A `Float` of data to be recorded
     ///   - iter: An `Int` of iteration index
-    func addScalars(_ mainTag: String, _ data: [String: Float], iter: Int) {
+    public func addScalars(_ mainTag: String, _ data: [String: Float], iter: Int) {
         writerPtr!.add_scalar(mainTag, data, iter)
     }
     
