@@ -140,6 +140,21 @@ extension PyModule: PythonConvertible {
     public var pythonObject: PythonObject {
         return modulePtr
     }
+    
+    /// Constructor to convert a `PySequential` to `PyModule`
+    /// - Parameter sequential: A `PySequential` model to convert
+    public init(sequential: PySequential) {
+        // initialize sequential
+        let seq = torch.nn.Sequential()
+        
+        // loop for modules
+        for (i, m) in sequential.modules.enumerated() {
+            seq.add_module(String(i), m)
+        }
+        
+        // set python module pointer
+        modulePtr = seq
+    }
 }
 
 /// A sequential module of `PyModules`
