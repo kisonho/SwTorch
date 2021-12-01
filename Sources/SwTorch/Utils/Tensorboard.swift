@@ -39,7 +39,7 @@ public class SummaryWriter: Enterable {
     ///   - data: A `Float` of data to be recorded
     ///   - iter: An `Int` of iteration index
     public func addScalars(_ mainTag: String, _ data: [String: Float], iter: Int) {
-        writerPtr!.add_scalar(mainTag, data, iter)
+        writerPtr!.add_scalars(mainTag, data, iter)
     }
     
     public func enter() {
