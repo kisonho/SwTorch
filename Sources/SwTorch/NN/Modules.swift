@@ -42,6 +42,22 @@ public protocol Module {
 }
 
 public extension Module {
+    /// Automatically get all modules as PyModule in current module
+    var modules: Array<PyModule> { get {
+        // initialize mirror
+        let mirror = Mirror(reflecting: self)
+        var pyModules = Array<PyModule>()
+        
+        // loop for attributes
+        for attr in mirror.children {
+            if let m = attr.value as? Module {
+                pyModules.append(m.toPyModule())
+            }
+        }
+        
+        return pyModules
+    }}
+    
     /// Automatically get all parameters in current module
     var parameters: Array<Tensor> { get {
         // initialize mirror
