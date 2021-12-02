@@ -99,6 +99,16 @@ struct Conv2D: WeightedModule {
         Tensor(F.conv2d(x, weight, bias, stride: [stride.h, stride.w], padding: padding.rawValue, dilation: dilation, groups: groups))
     }
     
+    func toPyModule() -> PyModule {
+        // initialize model
+        let m = torch.nn.Conv2d(inFeatures, outFeatures, [weight.shape[0], weight.shape[1] * groups], stride: [stride.h, stride.w], padding: padding.rawValue, dilation: dilation, groups: groups, bias: bias != nil)
+        
+        // set up parameters
+        m.weight = torch.nn.parameter.Parameter(weight)
+        m.bias = torch.nn.parameter.Parameter(bias)
+        return PyModule(m)!
+    }
+    
     func train() {
         return
     }
@@ -151,6 +161,10 @@ public struct Flatten: Module {
     
     mutating public func loadStateDict(_ dict: [String : PythonObject?]) {
         return
+    }
+    
+    public func toPyModule() -> PyModule {
+        return PyModule(torch.nn.Flatten(startDim, endDim))!
     }
     
     public func train() {
@@ -209,6 +223,20 @@ struct Linear: WeightedModule {
     
     func train() {
         return
+    }
+    
+    public func toPyModule() -> PyModule {
+        let m = torch.nn.Linear(inFeatures, outFeatures, bias: bias != nil)
+        
+        // set up weight
+        m.weight = torch.nn.parameter.Parameter(weight)
+        
+        // set up bias
+        if bias != nil {
+            m.bias = torch.nn.parameter.Parameter(bias!)
+        }
+        
+        return PyModule(m)!
     }
     
     func save(_ file: URL) {

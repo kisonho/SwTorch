@@ -30,6 +30,9 @@ public protocol Module {
     /// - Parameter dict: A `Dictionary` of parameter name and optional value in `PythonObject`
     mutating func loadStateDict(_ dict: [String: PythonObject?])
     
+    /// Method to convert current module to PyModule
+    func toPyModule() -> PyModule
+    
     /// Set target module into training mode
     func train()
     
@@ -109,6 +112,10 @@ public struct PyModule: Module {
     
     public func loadStateDict(_ dict: [String: PythonObject?]) {
         self.modulePtr.loadStateDict(dict)
+    }
+    
+    public func toPyModule() -> PyModule {
+        return self
     }
     
     public func train() {
@@ -231,6 +238,10 @@ public struct PySequential: Module {
         
         // save to file
         PyModule(pySequential)!.save(file)
+    }
+    
+    public func toPyModule() -> PyModule {
+        return PyModule(sequential: self)
     }
     
     public func train() {

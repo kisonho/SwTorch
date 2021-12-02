@@ -79,6 +79,11 @@ struct DataParalleledModule<M: DeviceMovable & Module>: Module {
         self.module.loadStateDict(dict)
     }
     
+    func toPyModule() -> PyModule {
+        let m = module.toPyModule()
+        return m.dataParallel()
+    }
+    
     public func train() {
         self.module.train()
     }
