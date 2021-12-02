@@ -15,7 +15,7 @@ public protocol LrScheduler {
     /// The current step index
     var currentStep: Int { get set }
     
-    /// Initial learning rate
+    /// Current learning rate
     var lr: Double { get set }
     
     /// The optimizer where learning rate is
@@ -29,7 +29,8 @@ public protocol LrScheduler {
 public extension LrScheduler {
     /// Call for each step
     mutating func step() {
-        self.optimizer.lr = updateLr()
+        lr = updateLr()
+        self.optimizer.lr = lr
         self.currentStep += 1
     }
 }
