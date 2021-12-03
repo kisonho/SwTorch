@@ -11,6 +11,18 @@ import PythonKit
 fileprivate let F = Python.import("torch.nn.functional")
 
 /// The metrics that calculate BCE with logits loss between two `Tensor`
+public class BCELoss: Loss {
+    /// A manual rescaling weight
+    var weight: Tensor? = nil
+    
+    public init() {}
+    
+    public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Tensor {
+        return Tensor(F.binary_cross_entropy(yPred, yTrue, weight))
+    }
+}
+
+/// The metrics that calculate BCE with logits loss between two `Tensor`
 public class BCEWithLogitsLoss: Loss {
     /// A manual rescaling weight
     var weight: Tensor? = nil
