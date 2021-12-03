@@ -72,6 +72,11 @@ public struct Tensor {
         self.tensorPtr.backward(gradient, retain_graph: retainGraph, create_graph: createGraph, inputs: inputs)
     }
     
+    /// Detach current tensor
+    public func detach() {
+        self.tensorPtr.detach()
+    }
+    
     /// Initialize a `Tensor` with all ones elements
     /// - Parameters:
     ///   - shape: An shape of `Tensor` in `Array<Int>`
