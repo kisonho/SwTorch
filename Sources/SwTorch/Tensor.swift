@@ -73,8 +73,9 @@ public struct Tensor {
     }
     
     /// Detach current tensor
-    public func detach() {
-        self.tensorPtr.detach()
+    public mutating func detach() -> Tensor {
+        self.tensorPtr = self.tensorPtr.detach()
+        return self
     }
     
     /// Initialize a `Tensor` with all ones elements
