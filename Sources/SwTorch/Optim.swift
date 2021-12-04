@@ -87,6 +87,41 @@ public struct ExponentionLr<OptimizerType: Optimizer>: LrScheduler {
     }
 }
 
+public struct MultiStepLr<OptimizerType: Optimizer>: LrScheduler {
+    public var currentStep: Int = 0
+    
+    /// The exponential gamma
+    var gamma: Double
+    
+    public var lr: Double
+    
+    /// Steps to decay the learning rate
+    var milestones: Array<Int>
+    
+    public var optimizer: OptimizerType
+    /// Constructor
+    /// - Parameters:
+    ///   - optimizer: An `OptimizerType` to be updated
+    ///   - gamma: A `Double` of exponention value
+    ///   - initialLr: A `Double` of initial learning rate
+    ///   - milestones: An `Array` of steps in `Int`
+    public init(_ optimizer: OptimizerType, gamma: Double, initialLr: Double, milestones: Array<Int>) {
+        self.optimizer = optimizer
+        self.gamma = gamma
+        self.lr = initialLr
+        self.milestones = milestones
+    }
+    
+    public func updateLr() -> Double {
+        // decay gamma when step
+        if milestones.contains(currentStep) {
+            return lr * gamma
+        } else {
+            return lr
+        }
+    }
+}
+
 /// Main optimizer protocol
 public protocol Optimizer {
     /// Parameter groups in an optimizer
