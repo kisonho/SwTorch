@@ -216,25 +216,25 @@ open class TrainingManager<ModuleType: Module & DataParallelable & DeviceMovable
         self.dataParalleledModule?.to(device, id: nil)
     }
     
-    public func onBatchEnd(batch: Int, result: [String : Float]) {
+    open func onBatchEnd(batch: Int, result: [String : Float]) {
         return
     }
     
-    public func onEpochStart(epoch: Int, totalEpochs: Int) {
+    open func onEpochStart(epoch: Int, totalEpochs: Int) {
         print("Training epoch \(epoch + 1)/\(totalEpochs)")
         model.train()
     }
     
-    public func onEpochEnd(epoch: Int, totalEpochs: Int, trainingResult: [String : Float], valResult: [String : Float]?) -> Bool {
+    open func onEpochEnd(epoch: Int, totalEpochs: Int, trainingResult: [String : Float], valResult: [String : Float]?) -> Bool {
         print("Epoch \(epoch + 1)/\(totalEpochs): \(valResult ?? trainingResult)")
         return true
     }
     
-    public func onValStart() {
+    open func onValStart() {
         model.eval()
     }
     
-    public func trainStep(_ xTrain: Tensor, _ yTrain: Tensor) -> [String : Float] {
+    open func trainStep(_ xTrain: Tensor, _ yTrain: Tensor) -> [String : Float] {
         // forward pass
         optimizer.zeroGrad(setToNone: false)
         let y = useMultiGPUs ? dataParalleledModule!(xTrain) : model(xTrain)
@@ -250,7 +250,7 @@ open class TrainingManager<ModuleType: Module & DataParallelable & DeviceMovable
         return summary
     }
     
-    public func valStep(_ xTest: Tensor, _ yTest: Tensor) -> [String : Float] {
+    open func valStep(_ xTest: Tensor, _ yTest: Tensor) -> [String : Float] {
         // forward pass
         let y = useMultiGPUs ? dataParalleledModule!(xTest) : model(xTest)
         let loss = calculateLoss(yTest, y)
