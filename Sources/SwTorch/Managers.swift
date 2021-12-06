@@ -224,7 +224,7 @@ public class TrainingManager<ModuleType: Module & DataParallelable & DeviceMovab
     }
     
     public func onEpochEnd(epoch: Int, totalEpochs: Int, trainingResult: [String : Float], valResult: [String : Float]?) -> Bool {
-        print("Epoch \(epoch + 1)/\(totalEpochs)")
+        print("Epoch \(epoch + 1)/\(totalEpochs): \(valResult ?? trainingResult)")
         return true
     }
     
