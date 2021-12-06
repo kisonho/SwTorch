@@ -42,6 +42,15 @@ public enum DType {
 
 /// main tensor struct
 public struct Tensor {
+    /// The gradient of current Tensor
+    public var grad: Tensor? { get {
+        if String(tensorPtr.grad) != "None" {
+            return Tensor(tensorPtr.grad)
+        } else { return nil }
+    } set(g) {
+        tensorPtr.grad = PythonObject(g)
+    }}
+    
     /// Get current tensor shape
     public var shape: Array<Int> { get {
         return Array(tensorPtr.shape)!
@@ -303,12 +312,9 @@ extension Tensor: Sequence {
     }
 }
 
-extension Array where Element: PythonConvertible {
+extension Array where Element: ConvertibleFromPython {
     public init?(_ tensor: Tensor) {
-        self = []
-        for t in tensor.tensorPtr {
-            append(t as! Element)
-        }
+        self = Array<Element>(tensor.tensorPtr.tolist())!
     }
 }
 

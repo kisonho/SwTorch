@@ -10,7 +10,7 @@ import PythonKit
 /// Data parallel module for multi-gpus support
 public protocol DataParallelable {
     /// Target module type to parallel
-    associatedtype DataParallelModuleType: Module
+    associatedtype DataParallelModuleType: Module & DeviceMovable
     
     /// The function to data parallel target module
     /// - Returns: A  data paralleled `ModuleType` which implements `Module`
@@ -59,28 +59,18 @@ extension PyModule: DeviceMovable {
     }
 }
 
-extension PySequential: DataParallelable {
-    public typealias DataParallelModuleType = PySequential
-    
-    public func dataParallel() -> PySequential {
-        // initialize data paralleled modules
-        var dataParalleledModules = Array<PyModule>()
-        
-        // data parallel each module
-        for m in modules {
-            dataParalleledModules.append(m.dataParallel())
-        }
-        
-        // create data paralleled Sequential instance
-        return PySequential(dataParalleledModules)
-    }
-}
-
 extension PySequential: DeviceMovable {
     public mutating func to(_ device: Device, id: Int?) {
         for m in modules {
             m.to(device, id: id)
         }
+    }
+}
+
+extension WeightedModule {
+    mutating func to(_ device: Device, id: Int? = nil) {
+        bias?.to(device, id: id)
+        weight.to(device, id: id)
     }
 }
 

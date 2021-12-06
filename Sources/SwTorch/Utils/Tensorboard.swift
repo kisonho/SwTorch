@@ -24,6 +24,14 @@ public class SummaryWriter: Enterable {
         self.logDir = logDir
     }
     
+    /// Add graph data to summary
+    /// - Parameters:
+    ///   - model: A `ModuleType` of target model that conforms to `Module`
+    ///   - inputToModel: An `Array` of `Tensor` variables to be fed
+    public func addGraph<ModuleType: Module>(_ model: ModuleType, inputToModel: Array<Tensor>? = nil) {
+        writerPtr!.add_graph(model.toPyModule(), inputToModel)
+    }
+    
     /// Add scalar to the board
     /// - Parameters:
     ///   - name: A `String` of scalar name

@@ -171,3 +171,91 @@ public extension Training {
         return bestResult
     }
 }
+
+public class TrainingManager<ModuleType: Module & DataParallelable & DeviceMovable, OptimizerType: Optimizer>: Training {
+    /// Main loss function
+    var calculateLoss: (_ yTrue: Tensor, _ yPred: Tensor) -> Tensor
+    
+    /// Main metrics function
+    var calculateMetrics: (_ yTrue: Tensor, _ yPred: Tensor) -> [String: Float]
+    
+    /// Data paralleled module
+    var dataParalleledModule: ModuleType.DataParallelModuleType?
+    
+    public var device: Device
+    
+    /// Main model to be trained
+    public var model: ModuleType
+    
+    /// Optimizer to update model parameters
+    public var optimizer: OptimizerType
+    
+    public var useMultiGPUs: Bool
+    
+    /// Constructor
+    /// - Parameters:
+    ///   - model: Target model in `ModuleType` to be trained
+    ///   - optimizer: An optimizer in `OptimizerType` to update the model
+    ///   - loss: A function that accept yTrue `Tensor` and yPred `Tensor` to calculate the loss `Tensor`
+    ///   - metrics: A function that accept yTrue `Tensor` and yPred `Tensor` to calculate the metrics `Dictionary` whith name in `String` and value in `Float`
+    ///   - device: Target `Device` of model
+    ///   - useMultiGPUs: A `Bool` flag of if using multi gpus during training and validation
+    init(model: ModuleType, optimizer: OptimizerType, loss: @escaping (_ yTrue: Tensor, _ yPred: Tensor) -> Tensor, metrics: @escaping (_ yTrue: Tensor, _ yPred: Tensor) -> [String: Float], device: Device = .cpu, useMultiGPUs: Bool = false) {
+        // initialize parameters
+        self.calculateLoss = loss
+        self.calculateMetrics = metrics
+        self.dataParalleledModule = useMultiGPUs ? model.dataParallel() : nil
+        self.device = device
+        self.model = model
+        self.optimizer = optimizer
+        self.useMultiGPUs = useMultiGPUs
+        
+        // move model to target device
+        self.dataParalleledModule?.to(device, id: nil)
+    }
+    
+    public func onBatchEnd(batch: Int, result: [String : Float]) {
+        return
+    }
+    
+    public func onEpochStart(epoch: Int, totalEpochs: Int) {
+        print("Training epoch \(epoch + 1)/\(totalEpochs)")
+        model.train()
+    }
+    
+    public func onEpochEnd(epoch: Int, totalEpochs: Int, trainingResult: [String : Float], valResult: [String : Float]?) -> Bool {
+        print("Epoch \(epoch + 1)/\(totalEpochs)")
+        return true
+    }
+    
+    public func onValStart() {
+        model.eval()
+    }
+    
+    public func trainStep(_ xTrain: Tensor, _ yTrain: Tensor) -> [String : Float] {
+        // forward pass
+        optimizer.zeroGrad(setToNone: false)
+        let y = useMultiGPUs ? dataParalleledModule!(xTrain) : model(xTrain)
+        let loss = calculateLoss(yTrain, y)
+        
+        // backward pass
+        loss.backward()
+        optimizer.step()
+        
+        // summarize
+        var summary = calculateMetrics(yTrain, y)
+        summary["loss"] = Float(loss.mean())
+        return summary
+    }
+    
+    public func valStep(_ xTest: Tensor, _ yTest: Tensor) -> [String : Float] {
+        // forward pass
+        let y = useMultiGPUs ? dataParalleledModule!(xTest) : model(xTest)
+        let loss = calculateLoss(yTest, y)
+        
+        // summarize
+        var summary = calculateMetrics(yTest, y)
+        summary["loss"] = Float(loss.mean())
+        return summary
+    }
+}

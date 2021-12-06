@@ -8,14 +8,6 @@
 import Foundation
 import PythonKit
 
-extension Conv2D: DataParallelable {
-    typealias DataParallelModuleType = DataParalleledModule<Conv2D>
-    
-    func dataParallel() -> DataParalleledModule<Conv2D> {
-        return DataParalleledModule(self)
-    }
-}
-
 /// A special module structure for multi-gpus support
 struct DataParalleledModule<M: DeviceMovable & Module>: Module {
     /// The indices of target devices
@@ -108,10 +100,25 @@ extension DataParalleledModule: DeviceMovable {
     }
 }
 
-extension Linear: DataParallelable {
-    typealias DataParallelModuleType = DataParalleledModule<Linear>
+extension PySequential: DataParallelable {
+    public typealias DataParallelModuleType = PySequential
     
-    func dataParallel() -> DataParalleledModule<Linear> {
+    public func dataParallel() -> PySequential {
+        // initialize data paralleled modules
+        var dataParalleledModules = Array<PyModule>()
+        
+        // data parallel each module
+        for m in modules {
+            dataParalleledModules.append(m.dataParallel())
+        }
+        
+        // create data paralleled Sequential instance
+        return PySequential(dataParalleledModules)
+    }
+}
+
+extension WeightedModule where DataParallelModuleType == DataParalleledModule<Self> {    
+    func dataParallel() -> DataParalleledModule<Self> {
         return DataParalleledModule(self)
     }
 }

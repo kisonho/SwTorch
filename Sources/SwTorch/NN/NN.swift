@@ -258,7 +258,7 @@ enum Padding: String {
 }
 
 /// A module with bias and weight
-protocol WeightedModule: DeviceMovable, Module {
+protocol WeightedModule: DataParallelable, DeviceMovable, Module {
     /// The bias `Tensor`
     var bias: Tensor? { get set }
     
@@ -287,10 +287,5 @@ extension WeightedModule {
         let bias = dict["bias"]!
         self.bias = bias != nil ? Tensor(bias!) : nil
         self.weight = Tensor(dict["weight"]!!)
-    }
-    
-    mutating func to(_ device: Device, id: Int? = nil) {
-        bias?.to(device, id: id)
-        weight.to(device, id: id)
     }
 }
