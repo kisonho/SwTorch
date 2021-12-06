@@ -7,7 +7,8 @@
 
 import PythonKit
 
-/// import required modules
+// import required modules
+/// PyTorch python library
 public let torch = Python.import("torch")
 
 /// Main Validation Protocol
@@ -172,6 +173,7 @@ public extension Training {
     }
 }
 
+/// A manager wrap for training PyTorch model
 public class TrainingManager<ModuleType: Module & DataParallelable & DeviceMovable, OptimizerType: Optimizer>: Training {
     /// Main loss function
     var calculateLoss: (_ yTrue: Tensor, _ yPred: Tensor) -> Tensor
