@@ -182,7 +182,7 @@ open class TrainingManager<ModuleType: Module & DataParallelable & DeviceMovable
     var calculateMetrics: (_ yTrue: Tensor, _ yPred: Tensor) -> [String: Float]
     
     /// Data paralleled module
-    var dataParalleledModule: ModuleType.DataParallelModuleType?
+    public var dataParalleledModule: ModuleType.DataParallelModuleType?
     
     public var device: Device
     
