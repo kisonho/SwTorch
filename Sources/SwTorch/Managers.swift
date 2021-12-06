@@ -200,7 +200,7 @@ public class TrainingManager<ModuleType: Module & DataParallelable & DeviceMovab
     ///   - metrics: A function that accept yTrue `Tensor` and yPred `Tensor` to calculate the metrics `Dictionary` whith name in `String` and value in `Float`
     ///   - device: Target `Device` of model
     ///   - useMultiGPUs: A `Bool` flag of if using multi gpus during training and validation
-    init(model: ModuleType, optimizer: OptimizerType, loss: @escaping (_ yTrue: Tensor, _ yPred: Tensor) -> Tensor, metrics: @escaping (_ yTrue: Tensor, _ yPred: Tensor) -> [String: Float], device: Device = .cpu, useMultiGPUs: Bool = false) {
+    init(_ model: ModuleType, _ optimizer: OptimizerType, loss: @escaping (_ yTrue: Tensor, _ yPred: Tensor) -> Tensor, metrics: @escaping (_ yTrue: Tensor, _ yPred: Tensor) -> [String: Float], device: Device = .cpu, useMultiGPUs: Bool = false) {
         // initialize parameters
         self.calculateLoss = loss
         self.calculateMetrics = metrics
