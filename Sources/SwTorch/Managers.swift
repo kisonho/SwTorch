@@ -174,7 +174,7 @@ public extension Training {
 }
 
 /// A manager wrap for training PyTorch model
-public class TrainingManager<ModuleType: Module & DataParallelable & DeviceMovable, OptimizerType: Optimizer>: Training {
+open class TrainingManager<ModuleType: Module & DataParallelable & DeviceMovable, OptimizerType: Optimizer>: Training {
     /// Main loss function
     var calculateLoss: (_ yTrue: Tensor, _ yPred: Tensor) -> Tensor
     
