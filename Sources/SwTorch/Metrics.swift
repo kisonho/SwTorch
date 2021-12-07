@@ -90,7 +90,7 @@ public protocol Loss {
     func callAsFunction(_ yTrue: Tensor, _ yPred: Tensor) -> Tensor
 }
 
-extension Loss {
+public extension Loss {
     /// Calculate method of metric
     /// - Parameters:
     ///   - yTrue: The target `Tensor`
