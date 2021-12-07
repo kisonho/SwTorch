@@ -17,7 +17,7 @@ public class BCELoss: Loss {
     
     public init() {}
     
-    public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Tensor {
+    public func callAsFunction(_ yTrue: Tensor, _ yPred: Tensor) -> Tensor {
         return Tensor(F.binary_cross_entropy(yPred, yTrue, weight))
     }
 }
@@ -29,7 +29,7 @@ public class BCEWithLogitsLoss: Loss {
     
     public init() {}
     
-    public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Tensor {
+    public func callAsFunction(_ yTrue: Tensor, _ yPred: Tensor) -> Tensor {
         return Tensor(F.binary_cross_entropy_with_logits(yPred, yTrue, weight))
     }
 }
@@ -53,7 +53,7 @@ public class CrossEntropyLoss: Loss {
         self.ignoreIndex = ignoreIndex
     }
     
-    public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Tensor {
+    public func callAsFunction(_ yTrue: Tensor, _ yPred: Tensor) -> Tensor {
         return Tensor(F.cross_entropy(yPred, yTrue, weight: weight, ignore_index: ignoreIndex))
     }
 }
@@ -75,7 +75,7 @@ public class KLDivLoss: Loss {
         self.reduce = reduce
     }
     
-    public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Tensor {
+    public func callAsFunction(_ yTrue: Tensor, _ yPred: Tensor) -> Tensor {
         let reduction = reduce == true ? "batchmean" : "none"
         return Tensor(F.kl_div(yPred, yTrue, reduction: reduction, log_target: logTarget))
     }
@@ -87,7 +87,19 @@ public protocol Loss {
     ///   - yTrue: The target `Tensor`
     ///   - yPred: The input `Tensor`
     /// - Returns: A `Tensor` of current metric
-    func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Tensor
+    func callAsFunction(_ yTrue: Tensor, _ yPred: Tensor) -> Tensor
+}
+
+extension Loss {
+    /// Calculate method of metric
+    /// - Parameters:
+    ///   - yTrue: The target `Tensor`
+    ///   - yPred: The input `Tensor`
+    /// - Returns: A `Tensor` of current metric
+    @available(*, deprecated, message: "Use without labels for both parameters: callAsFunction(_ yTrue: Tensor, _ yPred: Tensor) -> Tensor")
+    func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Tensor {
+        return callAsFunction(yTrue, yPred)
+    }
 }
 
 /// Main metrics protocol
@@ -97,14 +109,26 @@ public protocol Metrics {
     ///   - yTrue: The target `Tensor`
     ///   - yPred: The input `Tensor`
     /// - Returns: A `Float` of current metric
-    func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float
+    func callAsFunction(_ yTrue: Tensor, _ yPred: Tensor) -> Float
+}
+
+extension Metrics {
+    /// Calculate method of metric
+    /// - Parameters:
+    ///   - yTrue: The target `Tensor`
+    ///   - yPred: The input `Tensor`
+    /// - Returns: A `Tensor` of current metric
+    @available(*, deprecated, message: "Use without labels for both parameters: callAsFunction(_ yTrue: Tensor, _ yPred: Tensor) -> Tensor")
+    func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
+        return callAsFunction(yTrue, yPred)
+    }
 }
 
 /// The metrics that calculates accuracy between two `Tensor`
 public class Accuracy: Metrics {
     public init() {}
     
-    public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
+    public func callAsFunction(_ yTrue: Tensor, _ yPred: Tensor) -> Float {
         return Float(yTrue.equal(yPred).to(dtype: .float32).mean())!
     }
 }
@@ -113,7 +137,7 @@ public class Accuracy: Metrics {
 public class MAE: Metrics {
     public init() {}
     
-    public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
+    public func callAsFunction(_ yTrue: Tensor, _ yPred: Tensor) -> Float {
         let diff = yTrue - yPred
         return Float(diff.abs().mean())!
     }
@@ -123,7 +147,7 @@ public class MAE: Metrics {
 public class MSE: Metrics {
     public init() {}
     
-    public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
+    public func callAsFunction(_ yTrue: Tensor, _ yPred: Tensor) -> Float {
         let diff = (yTrue - yPred) ^ 2
         return Float(diff.abs().mean())!
     }
@@ -134,7 +158,7 @@ public struct PyMetrics: Metrics {
     /// The pointer of python metrics
     public var metricsPtr: PythonObject
     
-    public func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
+    public func callAsFunction(_ yTrue: Tensor, _ yPred: Tensor) -> Float {
         return Float(metricsPtr(yPred, yTrue))!
     }
 }
@@ -150,8 +174,8 @@ public final class SparseCategoricalAccuracy: Accuracy {
     /// The dimention of prediction
     var dim: Int = 1
     
-    public override func callAsFunction(yTrue: Tensor, yPred: Tensor) -> Float {
+    public override func callAsFunction(_ yTrue: Tensor, _ yPred: Tensor) -> Float {
         let y = yPred.argmax(dim: dim)
-        return super.callAsFunction(yTrue: yTrue, yPred: y)
+        return super.callAsFunction(yTrue, y)
     }
 }
