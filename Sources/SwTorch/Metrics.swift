@@ -112,7 +112,7 @@ public protocol Metrics {
     func callAsFunction(_ yTrue: Tensor, _ yPred: Tensor) -> Float
 }
 
-extension Metrics {
+public extension Metrics {
     /// Calculate method of metric
     /// - Parameters:
     ///   - yTrue: The target `Tensor`
