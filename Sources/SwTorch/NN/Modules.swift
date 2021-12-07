@@ -217,7 +217,7 @@ public struct PySequential: Module {
     } set {
         // loop for each module
         for (i, (_, value)) in newValue.enumerated() {
-            modules[i].stateDict = Dictionary(value ?? [:]) ?? [:]
+            modules[i].stateDict = Dictionary(value!) ?? [:]
         }
     }}
     
