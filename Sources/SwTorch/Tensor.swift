@@ -47,8 +47,8 @@ public struct Tensor {
         if String(tensorPtr.grad) != "None" {
             return Tensor(tensorPtr.grad)
         } else { return nil }
-    } set(g) {
-        tensorPtr.grad = PythonObject(g)
+    } set {
+        tensorPtr.grad = PythonObject(newValue)
     }}
     
     /// Get current tensor shape

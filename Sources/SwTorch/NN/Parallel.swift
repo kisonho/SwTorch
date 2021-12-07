@@ -23,6 +23,12 @@ struct DataParalleledModule<M: DeviceMovable & Module>: Module {
         return module.parameters
     }}
     
+    var stateDict: [String : PythonObject?] { get {
+        return module.stateDict
+    } set {
+        module.stateDict = newValue
+    }}
+    
     public init(_ file: URL) {
         self.module = M(file)
         devices = searchAllDevices()
@@ -65,10 +71,6 @@ struct DataParalleledModule<M: DeviceMovable & Module>: Module {
         
         let y = Tensor(torch.nn.parallel.data_parallel.gather(yInGPUs, outputDevice, dim: 0))
         return y
-    }
-    
-    public mutating func loadStateDict(_ dict: [String : PythonObject?]) {
-        self.module.loadStateDict(dict)
     }
     
     func toPyModule() -> PyModule {

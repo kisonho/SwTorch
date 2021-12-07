@@ -138,12 +138,12 @@ public protocol Optimizer {
 public struct PyOptimizer: ConvertibleFromPython, Optimizer {
     public var lr: Double { get {
         return lrPointer
-    } set(newLr) {
-        lrPointer = newLr
+    } set {
+        lrPointer = newValue
         
         // loop for each group
         for g in optimizerPtr.param_groups {
-            g["lr"] = PythonObject(newLr)
+            g["lr"] = PythonObject(newValue)
         }
     }}
     

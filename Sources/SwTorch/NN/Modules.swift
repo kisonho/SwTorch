@@ -10,6 +10,9 @@ import Foundation
 
 /// Main module protocol
 public protocol Module {
+    /// State dictionary variable
+    var stateDict: [String: PythonObject?] { get set }
+    
     /// Create new instance by loading from file
     /// - Parameter file: A `String` of file path to be loaded
     init(_ file: URL)
@@ -25,10 +28,6 @@ public protocol Module {
     /// - Parameter x: A `Tensor` of input
     /// - Returns: A `Tensor` of output
     func forward(_ x: Tensor) -> Tensor
-    
-    /// Load state dict from saved module
-    /// - Parameter dict: A `Dictionary` of parameter name and optional value in `PythonObject`
-    mutating func loadStateDict(_ dict: [String: PythonObject?])
     
     /// Method to convert current module to PyModule
     func toPyModule() -> PyModule
@@ -82,6 +81,13 @@ public extension Module {
     func callAsFunction(_ x: Tensor) -> Tensor {
         return forward(x)
     }
+    
+    /// Load state dict from saved module
+    /// - Parameter dict: A `Dictionary` of parameter name and optional value in `PythonObject`
+    @available(*, deprecated, message: "Use stateDict variable setter directly instead")
+    mutating func loadStateDict(_ dict: [String: PythonObject?]) {
+        stateDict = dict
+    }
 }
 
 /// Main PyTorch Module
@@ -109,6 +115,12 @@ public struct PyModule: Module {
         return params
     }}
     
+    public var stateDict: [String : PythonObject?] { get {
+        return Dictionary(modulePtr.state_dict()) ?? [:]
+    } set {
+        modulePtr.load_state_dict(newValue)
+    }}
+    
     public init(_ file: URL) {
         self.modulePtr = torch.load(file.absoluteString.replacingOccurrences(of: "file://", with: ""))
     }
@@ -124,10 +136,6 @@ public struct PyModule: Module {
     
     public func forward(_ x: Tensor) -> Tensor {
         return Tensor(modulePtr(x))
-    }
-    
-    public func loadStateDict(_ dict: [String: PythonObject?]) {
-        self.modulePtr.loadStateDict(dict)
     }
     
     public func toPyModule() -> PyModule {
@@ -197,6 +205,22 @@ public struct PySequential: Module {
         return params
     }}
     
+    public var stateDict: [String : PythonObject?] { get {
+        // initialize dict
+        var dict: [String: PythonObject?] = [:]
+        
+        // loop for each module
+        for (i, m) in modules.enumerated() {
+            dict[String(i)] = PythonObject(m.stateDict)
+        }
+        return dict
+    } set {
+        // loop for each module
+        for (i, (_, value)) in newValue.enumerated() {
+            modules[i].stateDict = Dictionary(value ?? [:]) ?? [:]
+        }
+    }}
+    
     /// Constructor
     /// - Parameter modules: An `Array<ModuleType>` of the modules
     public init(_ modules: Array<PyModule> = []) {
@@ -235,12 +259,6 @@ public struct PySequential: Module {
         }
         
         return x
-    }
-    
-    public mutating func loadStateDict(_ dict: [String : PythonObject?]) {
-        let pySequential = PyModule(torch.nn.Sequential(modules))!
-        pySequential.loadStateDict(dict)
-        modules = pySequential.modules
     }
     
     public func save(_ file: URL) {

@@ -29,6 +29,18 @@ struct Conv2D: WeightedModule {
     /// Padding method
     let padding: Padding
     
+    var stateDict: [String : PythonObject?] { get {
+        return ["bias": bias != nil ? PythonObject(bias) : nil,
+                "dilation": PythonObject(dilation),
+                "groups": PythonObject(groups),
+                "padding": PythonObject(padding.rawValue),
+                "stride": PythonObject([stride.h, stride.w]),
+                "weight": PythonObject(weight)]
+    } set {
+        self.bias = newValue["bias"] == nil ? nil : Tensor(newValue["bias"]!!)
+        self.weight = Tensor(newValue["weight"]!!)
+    }}
+    
     /// The stride of the conv kernel
     let stride: (h: Int, w: Int)
     
@@ -114,12 +126,6 @@ struct Conv2D: WeightedModule {
     }
     
     func save(_ file: URL) {
-        let stateDict: [String: PythonObject?] = ["bias": bias != nil ? PythonObject(bias) : nil,
-                                                  "dilation": PythonObject(dilation),
-                                                  "groups": PythonObject(groups),
-                                                  "padding": PythonObject(padding.rawValue),
-                                                  "stride": PythonObject([stride.h, stride.w]),
-                                                  "weight": PythonObject(weight)]
         torch.save(stateDict, file.absoluteString)
     }
 }
@@ -127,10 +133,18 @@ struct Conv2D: WeightedModule {
 /// A module to flatten tensor
 public struct Flatten: Module {
     /// Last dim to flatten
-    let endDim: Int
+    var endDim: Int
     
     /// First dim to flatten
-    let startDim: Int
+    var startDim: Int
+    
+    public var stateDict: [String : PythonObject?] { get {
+        return ["start_dim": PythonObject(startDim),
+                "end_dim": PythonObject(endDim)]
+    } set {
+        self.startDim = Int(newValue["start_dim"]!!)!
+        self.endDim = Int(newValue["end_dim"]!!)!
+    }}
     
     public init(_ file: URL) {
         let flatten: [String: PythonObject?] = Dictionary(torch.load(file.absoluteString))!
@@ -172,8 +186,6 @@ public struct Flatten: Module {
     }
     
     public func save(_ file: URL) {
-        let stateDict: [String: PythonObject?] = ["start_dim": PythonObject(startDim),
-                                                  "end_dim": PythonObject(endDim)]
         torch.save(stateDict, file.absoluteString)
     }
 }
@@ -181,6 +193,14 @@ public struct Flatten: Module {
 /// Main linear module
 struct Linear: WeightedModule {
     var bias: Tensor? = nil
+    
+    var stateDict: [String : PythonObject?] { get {
+        return ["bias": bias != nil ? PythonObject(bias) : nil,
+                "weight": PythonObject(weight)]
+    } set {
+        self.bias = newValue["bias"]! == nil ? nil : Tensor(newValue["bias"]!!)
+        self.weight = Tensor(newValue["weight"]!!)
+    }}
     
     var weight: Tensor
     
@@ -240,8 +260,6 @@ struct Linear: WeightedModule {
     }
     
     func save(_ file: URL) {
-        let stateDict: [String: PythonObject?] = ["bias": bias != nil ? PythonObject(bias) : nil,
-                                                  "weight": PythonObject(weight)]
         torch.save(stateDict, file.absoluteString)
     }
 }
@@ -282,10 +300,4 @@ extension WeightedModule {
         if bias != nil { return [weight, bias!]}
         else { return [weight] }
     }}
-    
-    mutating func loadStateDict(_ dict: [String : PythonObject?]) {
-        let bias = dict["bias"]!
-        self.bias = bias != nil ? Tensor(bias!) : nil
-        self.weight = Tensor(dict["weight"]!!)
-    }
 }
