@@ -82,12 +82,12 @@ public extension Evaluating {
 }
 
 /// Main evaluation manager
-class EvalManager<ModuleType: Module>: Evaluating {
+open class EvalManager<ModuleType: Module>: Evaluating {
     /// Main metrics function
     let calculateMetrics: (_ yTrue: Tensor, _ yPred: Tensor) -> [String: Float]
     
-    var useMultiGPUs: Bool
-    var device: Device
+    public var useMultiGPUs: Bool
+    public var device: Device
     var model: ModuleType
     
     /// Constructor
@@ -95,18 +95,18 @@ class EvalManager<ModuleType: Module>: Evaluating {
     ///   - model: A `ModuleType` of the module to be evaluated
     ///   - device: A target `Device` to work with
     ///   - useMultiGPUs: The `Bool` flag of if evaluating with multi GPUs
-    init(_ model: ModuleType, metrics: @escaping (_ yTrue: Tensor, _ yPred: Tensor) -> [String: Float], device: Device = .cuda, useMultiGPUs: Bool = false) {
+    public init(_ model: ModuleType, metrics: @escaping (_ yTrue: Tensor, _ yPred: Tensor) -> [String: Float], device: Device = .cuda, useMultiGPUs: Bool = false) {
         self.model = model
         self.calculateMetrics = metrics
         self.device = device
         self.useMultiGPUs = useMultiGPUs
     }
     
-    func onValStart() {
+    open func onValStart() {
         model.eval()
     }
     
-    func valStep(_ xTest: Tensor, _ yTest: Tensor) -> [String : Float] {
+    open func valStep(_ xTest: Tensor, _ yTest: Tensor) -> [String : Float] {
         // forward pass
         let y = model(xTest)
         return calculateMetrics(yTest, y)
