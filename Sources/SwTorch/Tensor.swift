@@ -71,6 +71,10 @@ public struct Tensor {
 //        self.type = dtype
     }
     
+    public subscript(i: Int) -> Tensor? {
+        return Tensor(self.tensorPtr[i])
+    }
+    
     /// backward function
     /// - Parameters:
     ///   - gradient: An optional gradient `Tensor`
