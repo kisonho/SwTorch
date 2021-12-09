@@ -77,7 +77,7 @@ public extension Evaluating {
 /// A manager wrap for supervised evaluating PyTorch model
 open class EvalManager<ModuleType: Module>: Evaluating {
     /// Main metrics function
-    public let calculateMetrics: (_ yTrue: Tensor, _ yPred: Tensor) -> [String: Float]
+    public let calculateMetrics: (_ yTrue: Any, _ yPred: Any) -> [String: Float]
     
     public var useMultiGPUs: Bool
     public var device: Device
@@ -88,7 +88,7 @@ open class EvalManager<ModuleType: Module>: Evaluating {
     ///   - model: A `ModuleType` of the module to be evaluated
     ///   - device: A target `Device` to work with
     ///   - useMultiGPUs: The `Bool` flag of if evaluating with multi GPUs
-    public init(_ model: ModuleType, metrics: @escaping (_ yTrue: Tensor, _ yPred: Tensor) -> [String: Float], device: Device = .cuda, useMultiGPUs: Bool = false) {
+    public init(_ model: ModuleType, metrics: @escaping (_ yTrue: Any, _ yPred: Any) -> [String: Float], device: Device = .cuda, useMultiGPUs: Bool = false) {
         self.model = model
         self.calculateMetrics = metrics
         self.device = device
