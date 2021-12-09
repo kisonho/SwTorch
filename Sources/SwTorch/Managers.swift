@@ -77,7 +77,7 @@ public extension Evaluating {
 /// A manager wrap for supervised evaluating PyTorch model
 open class EvalManager<ModuleType: Module>: Evaluating {
     /// Main metrics function
-    let calculateMetrics: (_ yTrue: Tensor, _ yPred: Tensor) -> [String: Float]
+    public let calculateMetrics: (_ yTrue: Tensor, _ yPred: Tensor) -> [String: Float]
     
     public var useMultiGPUs: Bool
     public var device: Device
@@ -99,20 +99,13 @@ open class EvalManager<ModuleType: Module>: Evaluating {
         model.eval()
     }
     
-    public func valStep(_ example: Any) -> [String : Float] {
+    open func valStep(_ example: Any) -> [String : Float] {
+        // extract example
         var xTest = Tensor((example as! PythonObject).tuple2.0)
         var yTest = Tensor((example as! PythonObject).tuple2.1)
         if useMultiGPUs != true { xTest.to(device) }
         yTest.to(device)
-        return valStep(xTest, yTest)
-    }
-    
-    /// supervised validation step
-    /// - Parameters:
-    ///   - xTest: An input `Tensor`
-    ///   - yTest: A label `Tensor`
-    /// - Returns: A `Dictionary` of result with name as `String` and value as `Float`
-    open func valStep(_ xTest: Tensor, _ yTest: Tensor) -> [String : Float] {
+        
         // forward pass
         let y = model(xTest)
         return calculateMetrics(yTest, y)
@@ -206,10 +199,10 @@ public extension Training {
 /// A manager wrap for supervised training PyTorch model
 open class TrainingManager<ModuleType: DataParallelable & Module, OptimizerType: Optimizer>: Training {
     /// Main loss function
-    let calculateLoss: (_ yTrue: Tensor, _ yPred: Tensor) -> Tensor
+    public let calculateLoss: (_ yTrue: Tensor, _ yPred: Tensor) -> Tensor
     
     /// Main metrics function
-    let calculateMetrics: (_ yTrue: Tensor, _ yPred: Tensor) -> [String: Float]
+    public let calculateMetrics: (_ yTrue: Tensor, _ yPred: Tensor) -> [String: Float]
     
     /// Data paralleled module
     public var dataParalleledModule: ModuleType.DataParallelModuleType?
