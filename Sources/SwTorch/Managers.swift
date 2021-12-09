@@ -22,12 +22,11 @@ public protocol Evaluating {
     /// On validation starts
     func onValStart()
     
-    /// Validation for a single step
+    /// Train for one step
     /// - Parameters:
-    ///   - input: A torch.Tensor for input
-    ///   - label: A torch.Tensor for label
-    /// - Returns: A Dictionary of result of validation
-    func valStep(_ xTest: Tensor, _ yTest: Tensor) -> [String: Float]
+    ///   - example: An `Any` object of input
+    /// - Returns: A `Dictionary` of result with name as `String` and value as `Float`
+    func valStep(_ example: Any) -> [String: Float]
 }
 
 public extension Evaluating {
@@ -46,14 +45,8 @@ public extension Evaluating {
             
             // batch loop
             for (batch, example) in dataset.enumerated() {
-                // extract example
-                var xTest = Tensor(example.tuple2.0)
-                var yTest = Tensor(example.tuple2.1)
-                if useMultiGPUs != true { xTest.to(device) }
-                yTest.to(device)
-                
                 // train step
-                let result = valStep(xTest, yTest)
+                let result = valStep(example)
                 
                 // append to list
                 for (key, m) in result {
@@ -81,7 +74,7 @@ public extension Evaluating {
     }
 }
 
-/// Main evaluation manager
+/// A manager wrap for supervised evaluating PyTorch model
 open class EvalManager<ModuleType: Module>: Evaluating {
     /// Main metrics function
     let calculateMetrics: (_ yTrue: Tensor, _ yPred: Tensor) -> [String: Float]
@@ -106,6 +99,19 @@ open class EvalManager<ModuleType: Module>: Evaluating {
         model.eval()
     }
     
+    public func valStep(_ example: Any) -> [String : Float] {
+        var xTest = Tensor((example as! PythonObject).tuple2.0)
+        var yTest = Tensor((example as! PythonObject).tuple2.1)
+        if useMultiGPUs != true { xTest.to(device) }
+        yTest.to(device)
+        return valStep(xTest, yTest)
+    }
+    
+    /// supervised validation step
+    /// - Parameters:
+    ///   - xTest: An input `Tensor`
+    ///   - yTest: A label `Tensor`
+    /// - Returns: A `Dictionary` of result with name as `String` and value as `Float`
     open func valStep(_ xTest: Tensor, _ yTest: Tensor) -> [String : Float] {
         // forward pass
         let y = model(xTest)
@@ -128,10 +134,9 @@ public protocol Training: Evaluating {
     
     /// Train for one step
     /// - Parameters:
-    ///   - input: A torch.Tensor for input
-    ///   - label: A torch.Tensor for label
-    /// - Returns: A Dictionary of results
-    func trainStep(_ xTrain: Tensor, _ yTrain: Tensor) -> [String: Float]
+    ///   - example: An `Any` object of input
+    /// - Returns: A `Dictionary` of result with name as `String` and value as `Float`
+    func trainStep(_ example: Any) -> [String: Float]
 }
 
 public extension Training {
@@ -160,16 +165,8 @@ public extension Training {
             
             // batch loop
             for (batch, example) in trainingDataset.enumerated() {
-                // extract example
-                var xTrain = Tensor(example.tuple2.0)
-                var yTrain = Tensor(example.tuple2.1)
-                
-                // move to device
-                if useMultiGPUs != true { xTrain.to(device) }
-                yTrain.to(device)
-                
                 // train step
-                let result = trainStep(xTrain, yTrain)
+                let result = trainStep(example)
                 
                 // append to list
                 for (key, m) in result {
@@ -206,7 +203,7 @@ public extension Training {
     }
 }
 
-/// A manager wrap for training PyTorch model
+/// A manager wrap for supervised training PyTorch model
 open class TrainingManager<ModuleType: DataParallelable & Module, OptimizerType: Optimizer>: Training {
     /// Main loss function
     let calculateLoss: (_ yTrue: Tensor, _ yPred: Tensor) -> Tensor
@@ -267,7 +264,23 @@ open class TrainingManager<ModuleType: DataParallelable & Module, OptimizerType:
         model.eval()
     }
     
-    open func trainStep(_ xTrain: Tensor, _ yTrain: Tensor) -> [String : Float] {
+    public func trainStep(_ example: Any) -> [String : Float] {
+        // extract example
+        var xTrain = Tensor((example as! PythonObject).tuple2.0)
+        var yTrain = Tensor((example as! PythonObject).tuple2.1)
+        
+        // move to device
+        if useMultiGPUs != true { xTrain.to(device) }
+        yTrain.to(device)
+        return trainStep(xTrain, yTrain)
+    }
+    
+    /// supervised train step
+    /// - Parameters:
+    ///   - xTest: An input `Tensor`
+    ///   - yTest: A label `Tensor
+    /// - Returns: A `Dictionary` of result with name as `String` and value as `Float`
+    public func trainStep(_ xTrain: Tensor, _ yTrain: Tensor) -> [String : Float] {
         // forward pass
         optimizer.zeroGrad(setToNone: false)
         let y = useMultiGPUs ? dataParalleledModule!(xTrain) : model(xTrain)
@@ -283,6 +296,19 @@ open class TrainingManager<ModuleType: DataParallelable & Module, OptimizerType:
         return summary
     }
     
+    public func valStep(_ example: Any) -> [String : Float] {
+        var xTest = Tensor((example as! PythonObject).tuple2.0)
+        var yTest = Tensor((example as! PythonObject).tuple2.1)
+        if useMultiGPUs != true { xTest.to(device) }
+        yTest.to(device)
+        return valStep(xTest, yTest)
+    }
+    
+    /// supervised validation step
+    /// - Parameters:
+    ///   - xTest: An input `Tensor`
+    ///   - yTest: A label `Tensor`
+    /// - Returns: A `Dictionary` of result with name as `String` and value as `Float`
     open func valStep(_ xTest: Tensor, _ yTest: Tensor) -> [String : Float] {
         // forward pass
         let y = useMultiGPUs ? dataParalleledModule!(xTest) : model(xTest)
