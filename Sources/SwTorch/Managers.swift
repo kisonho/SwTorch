@@ -264,7 +264,7 @@ open class TrainingManager<ModuleType: DataParallelable & Module, OptimizerType:
         model.eval()
     }
     
-    public func trainStep(_ example: Any) -> [String : Float] {
+    open func trainStep(_ example: Any) -> [String : Float] {
         // extract example
         var xTrain = Tensor((example as! PythonObject).tuple2.0)
         var yTrain = Tensor((example as! PythonObject).tuple2.1)
@@ -272,15 +272,7 @@ open class TrainingManager<ModuleType: DataParallelable & Module, OptimizerType:
         // move to device
         if useMultiGPUs != true { xTrain.to(device) }
         yTrain.to(device)
-        return trainStep(xTrain, yTrain)
-    }
-    
-    /// supervised train step
-    /// - Parameters:
-    ///   - xTest: An input `Tensor`
-    ///   - yTest: A label `Tensor
-    /// - Returns: A `Dictionary` of result with name as `String` and value as `Float`
-    public func trainStep(_ xTrain: Tensor, _ yTrain: Tensor) -> [String : Float] {
+        
         // forward pass
         optimizer.zeroGrad(setToNone: false)
         let y = useMultiGPUs ? dataParalleledModule!(xTrain) : model(xTrain)
@@ -296,20 +288,13 @@ open class TrainingManager<ModuleType: DataParallelable & Module, OptimizerType:
         return summary
     }
     
-    public func valStep(_ example: Any) -> [String : Float] {
+    open func valStep(_ example: Any) -> [String : Float] {
+        // extract example
         var xTest = Tensor((example as! PythonObject).tuple2.0)
         var yTest = Tensor((example as! PythonObject).tuple2.1)
         if useMultiGPUs != true { xTest.to(device) }
         yTest.to(device)
-        return valStep(xTest, yTest)
-    }
-    
-    /// supervised validation step
-    /// - Parameters:
-    ///   - xTest: An input `Tensor`
-    ///   - yTest: A label `Tensor`
-    /// - Returns: A `Dictionary` of result with name as `String` and value as `Float`
-    open func valStep(_ xTest: Tensor, _ yTest: Tensor) -> [String : Float] {
+        
         // forward pass
         let y = useMultiGPUs ? dataParalleledModule!(xTest) : model(xTest)
         let loss = calculateLoss(yTest, y)
