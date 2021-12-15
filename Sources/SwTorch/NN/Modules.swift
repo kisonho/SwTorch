@@ -49,7 +49,7 @@ public extension Module {
         
         // loop for attributes
         for attr in mirror.children {
-            if let m1 = attr.value as? Module || let m2 = attr.value as? PythonObject {
+            if let m1 = attr.value as? Module {
                 pyModules.append(m.toPyModule())
             }
         }
@@ -94,6 +94,13 @@ public extension Module {
 public struct PyModule: Module {
     /// The torch.nn.Module python object
     var modulePtr: PythonObject
+
+    /// The sub `PyModule` with the first as itself inside this module
+    public var pyModules: Array<PyModule> {
+        get {
+            return Array(modulePtr.modules())!
+        }
+    }
     
     /// The sub `PyModule` inside this module
     public var children: Array<PyModule> {
