@@ -96,7 +96,7 @@ public struct PyModule: Module {
     var modulePtr: PythonObject
     
     /// The sub `PyModule` inside this module
-    var children: Array<PyModule> {
+    public var children: Array<PyModule> {
         get {
             return Array(modulePtr.children())!
         }
