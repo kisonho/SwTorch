@@ -50,7 +50,7 @@ public extension Module {
         // loop for attributes
         for attr in mirror.children {
             if let m1 = attr.value as? Module {
-                pyModules.append(m.toPyModule())
+                pyModules.append(m1.toPyModule())
             }
         }
         
