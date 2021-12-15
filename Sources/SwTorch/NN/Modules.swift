@@ -49,7 +49,7 @@ public extension Module {
         
         // loop for attributes
         for attr in mirror.children {
-            if let m = attr.value as? Module {
+            if let m1 = attr.value as? Module || let m2 = attr.value as? PythonObject {
                 pyModules.append(m.toPyModule())
             }
         }
@@ -96,7 +96,7 @@ public struct PyModule: Module {
     var modulePtr: PythonObject
     
     /// The sub `PyModule` inside this module
-    var modules: Array<PyModule> {
+    var children: Array<PyModule> {
         get {
             return Array(modulePtr.children())!
         }
