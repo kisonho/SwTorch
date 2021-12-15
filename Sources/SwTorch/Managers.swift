@@ -116,20 +116,20 @@ open class EvalManager<ModuleType: Module>: Evaluating {
 /// Main Training Protocol
 public protocol Training: Evaluating {
     /// On every batch ends
-    func onBatchEnd(batch: Int, result: [String: Float])
+    mutating func onBatchEnd(batch: Int, result: [String: Float])
     
     /// On every epoch starts
-    func onEpochStart(epoch: Int, totalEpochs: Int)
+    mutating func onEpochStart(epoch: Int, totalEpochs: Int)
     
     /// On every epoch ends
     /// - Returns: A Bool of flag if this result is best
-    func onEpochEnd(epoch: Int, totalEpochs: Int, trainingResult: [String: Float], valResult: [String: Float]?) -> Bool
+    mutating func onEpochEnd(epoch: Int, totalEpochs: Int, trainingResult: [String: Float], valResult: [String: Float]?) -> Bool
     
     /// Train for one step
     /// - Parameters:
     ///   - example: An `Any` object of input
     /// - Returns: A `Dictionary` of result with name as `String` and value as `Float`
-    func trainStep(_ example: Any) -> [String: Float]
+    mutating func trainStep(_ example: Any) -> [String: Float]
 }
 
 public extension Training {
