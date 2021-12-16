@@ -118,8 +118,8 @@ public struct Conv2D: WeightedModule {
         let m = torch.nn.Conv2d(inFeatures, outFeatures, [weight.shape[0], weight.shape[1] * groups], stride: [stride.h, stride.w], padding: padding.rawValue, dilation: dilation, groups: groups, bias: bias != nil)
         
         // set up parameters
-        m.weight = torch.nn.parameter.Parameter(weight)
-        m.bias = torch.nn.parameter.Parameter(bias)
+        m.weight = PythonObject(weight)
+        m.bias = PythonObject(bias)
         return PyModule(m)!
     }
     
@@ -251,15 +251,8 @@ public struct Linear: WeightedModule {
     
     public func toPyModule() -> PyModule {
         let m = torch.nn.Linear(inFeatures, outFeatures, bias: bias != nil)
-        
-        // set up weight
-        m.weight = torch.nn.parameter.Parameter(weight)
-        
-        // set up bias
-        if bias != nil {
-            m.bias = torch.nn.parameter.Parameter(bias!)
-        }
-        
+        m.weight = PythonObject(weight)
+        m.bias = PythonObject(bias)
         return PyModule(m)!
     }
     
