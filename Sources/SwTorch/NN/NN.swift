@@ -8,7 +8,7 @@
 import Foundation
 import PythonKit
 
-fileprivate let Parameter = Python.import("torch.nn.parameter.Parameter")
+fileprivate let parameter = Python.import("torch.nn.parameter")
 fileprivate let F = Python.import("torch.nn.functional")
 
 /// Main conv2d module
@@ -89,12 +89,12 @@ public struct Conv2D: WeightedModule {
     public init(inChannels: Int, outChannels: Int, kernelSize: (h: Int, w: Int), stride: (h: Int, w: Int) = (h: 1, w: 1), padding: Padding = .same, dilation: Int = 1, groups: Int = 1, bias: Bool = true) throws {
         // initialize parameters
         guard inChannels % groups == 0 else { throw ModuleError.invalidGroups }
-        self.bias = bias == true ? Tensor(Parameter(torch.empty(outChannels))) : nil
+        self.bias = bias == true ? Tensor(parameter.Parameter(torch.empty(outChannels))) : nil
         self.dilation = dilation
         self.groups = groups
         self.padding = padding
         self.stride = stride
-        self.weight = Tensor(Parameter(torch.empty([outChannels, inChannels / groups, kernelSize.h, kernelSize.w])))
+        self.weight = Tensor(parameter.Parameter(torch.empty([outChannels, inChannels / groups, kernelSize.h, kernelSize.w])))
     }
     
     public func copy() -> Conv2D {
@@ -223,11 +223,11 @@ public struct Linear: WeightedModule {
     public init(inFeatures: Int, outFeatures: Int, bias: Bool = true) {
         // initialize bias
         if bias == true {
-            self.bias = Tensor(Parameter(torch.empty(outFeatures)))
+            self.bias = Tensor(parameter.Parameter(torch.empty(outFeatures)))
         }
         
         // initialize weight
-        self.weight = Tensor(Parameter(torch.empty([outFeatures, inFeatures])))
+        self.weight = Tensor(parameter.Parameter(torch.empty([outFeatures, inFeatures])))
     }
     
     public func copy() -> Linear {
