@@ -8,8 +8,18 @@
 import Foundation
 import PythonKit
 
+/// Data parallel module for multi-gpus support
+public protocol DataParallelable {
+    /// Target module type to parallel
+    associatedtype DataParallelModuleType: Module & DeviceMovable
+    
+    /// The function to data parallel target module
+    /// - Returns: A  data paralleled `ModuleType` which implements `Module`
+    func dataParallel() -> DataParallelModuleType
+}
+
 /// A special module structure for multi-gpus support
-struct DataParalleledModule<M: DeviceMovable & Module>: Module {
+public struct DataParalleledModule<M: DeviceMovable & Module>: Module {
     /// The indices of target devices
     let devices: Array<Int>
     
@@ -19,11 +29,11 @@ struct DataParalleledModule<M: DeviceMovable & Module>: Module {
     /// The paralleled modules in devices
     var parallelModules: Array<M> = []
     
-    var parameters: Array<Tensor> { get {
+    public var parameters: Array<Tensor> { get {
         return module.parameters
     }}
     
-    var stateDict: [String : PythonObject?] { get {
+    public var stateDict: [String : PythonObject?] { get {
         return module.stateDict
     } set {
         module.stateDict = newValue
@@ -73,7 +83,7 @@ struct DataParalleledModule<M: DeviceMovable & Module>: Module {
         return y
     }
     
-    func toPyModule() -> PyModule {
+    public func toPyModule() -> PyModule {
         let m = module.toPyModule()
         return m.dataParallel()
     }
@@ -119,8 +129,8 @@ extension PySequential: DataParallelable {
     }
 }
 
-extension WeightedModule where DataParallelModuleType == DataParalleledModule<Self> {    
-    func dataParallel() -> DataParalleledModule<Self> {
+extension WeightedModule where DataParallelModuleType == DataParalleledModule<Self> {
+    public func dataParallel() -> DataParallelModuleType {
         return DataParalleledModule(self)
     }
 }

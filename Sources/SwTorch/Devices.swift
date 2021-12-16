@@ -7,16 +7,6 @@
 
 import PythonKit
 
-/// Data parallel module for multi-gpus support
-public protocol DataParallelable {
-    /// Target module type to parallel
-    associatedtype DataParallelModuleType: Module & DeviceMovable
-    
-    /// The function to data parallel target module
-    /// - Returns: A  data paralleled `ModuleType` which implements `Module`
-    func dataParallel() -> DataParallelModuleType
-}
-
 /// Protocol for instances that can be move to a device
 public protocol DeviceMovable {
     /// move current object to target device
@@ -68,7 +58,7 @@ extension PySequential: DeviceMovable {
 }
 
 extension WeightedModule {
-    mutating func to(_ device: Device, id: Int? = nil) {
+    public mutating func to(_ device: Device, id: Int? = nil) {
         bias?.to(device, id: id)
         weight.to(device, id: id)
     }

@@ -12,24 +12,26 @@ fileprivate let Parameter = Python.import("torch.nn.parameter.Parameter")
 fileprivate let F = Python.import("torch.nn.functional")
 
 /// Main conv2d module
-struct Conv2D: WeightedModule {
-    var bias: Tensor? = nil
+public struct Conv2D: WeightedModule {
+    public typealias DataParallelModuleType = DataParalleledModule<Conv2D>
+    
+    public var bias: Tensor? = nil
     
     /// The `Int` of dilations
-    let dilation: Int
+    public let dilation: Int
     
     /// The `Int` of input channel groups
-    let groups: Int
+    public let groups: Int
     
     /// Number of input features
-    var inFeatures: Int { get {
+    public var inFeatures: Int { get {
         return weight.shape[1] * groups
     }}
     
     /// Padding method
-    let padding: Padding
+    public let padding: Padding
     
-    var stateDict: [String : PythonObject?] { get {
+    public var stateDict: [String : PythonObject?] { get {
         return ["bias": bias != nil ? PythonObject(bias) : nil,
                 "dilation": PythonObject(dilation),
                 "groups": PythonObject(groups),
@@ -42,11 +44,11 @@ struct Conv2D: WeightedModule {
     }}
     
     /// The stride of the conv kernel
-    let stride: (h: Int, w: Int)
+    public let stride: (h: Int, w: Int)
     
-    var weight: Tensor
+    public var weight: Tensor
     
-    init(_ file: URL) {
+    public init(_ file: URL) {
         // load convolutional layers
         let conv2d: [String: PythonObject?] = Dictionary(torch.load(file.absoluteString))!
         
@@ -84,7 +86,7 @@ struct Conv2D: WeightedModule {
     ///   - bias: A `Bool` flag of if using bias
     ///   - activation: Activation function that accepts an input `Tensor` and give an output `Tensor`
     /// - Throws: `ModuleError.invalidGroups` when input channels cannot be exactly groupped into groups given
-    init(inChannels: Int, outChannels: Int, kernelSize: (h: Int, w: Int), stride: (h: Int, w: Int) = (h: 1, w: 1), padding: Padding = .same, dilation: Int = 1, groups: Int = 1, bias: Bool = true) throws {
+    public init(inChannels: Int, outChannels: Int, kernelSize: (h: Int, w: Int), stride: (h: Int, w: Int) = (h: 1, w: 1), padding: Padding = .same, dilation: Int = 1, groups: Int = 1, bias: Bool = true) throws {
         // initialize parameters
         guard inChannels % groups == 0 else { throw ModuleError.invalidGroups }
         self.bias = bias == true ? Tensor(Parameter(torch.empty(outChannels))) : nil
@@ -95,7 +97,7 @@ struct Conv2D: WeightedModule {
         self.weight = Tensor(Parameter(torch.empty([outChannels, inChannels / groups, kernelSize.h, kernelSize.w])))
     }
     
-    func copy() -> Conv2D {
+    public func copy() -> Conv2D {
         // initialize copy
         var newConv = try! Conv2D(inChannels: inFeatures, outChannels: outFeatures, kernelSize: (h: weight.shape[2], w: weight.shape[3]), stride: stride, padding: padding, dilation: dilation, groups: groups, bias: bias != nil)
         newConv.bias = bias != nil ? Tensor(value: bias) : nil
@@ -103,15 +105,15 @@ struct Conv2D: WeightedModule {
         return newConv
     }
     
-    func eval() {
+    public func eval() {
         return
     }
     
-    func forward(_ x: Tensor) -> Tensor {
+    public func forward(_ x: Tensor) -> Tensor {
         Tensor(F.conv2d(x, weight, bias, stride: [stride.h, stride.w], padding: padding.rawValue, dilation: dilation, groups: groups))
     }
     
-    func toPyModule() -> PyModule {
+    public func toPyModule() -> PyModule {
         // initialize model
         let m = torch.nn.Conv2d(inFeatures, outFeatures, [weight.shape[0], weight.shape[1] * groups], stride: [stride.h, stride.w], padding: padding.rawValue, dilation: dilation, groups: groups, bias: bias != nil)
         
@@ -121,11 +123,11 @@ struct Conv2D: WeightedModule {
         return PyModule(m)!
     }
     
-    func train() {
+    public func train() {
         return
     }
     
-    func save(_ file: URL) {
+    public func save(_ file: URL) {
         torch.save(stateDict, file.absoluteString)
     }
 }
@@ -133,10 +135,10 @@ struct Conv2D: WeightedModule {
 /// A module to flatten tensor
 public struct Flatten: Module {
     /// Last dim to flatten
-    var endDim: Int
+    public var endDim: Int
     
     /// First dim to flatten
-    var startDim: Int
+    public var startDim: Int
     
     public var stateDict: [String : PythonObject?] { get {
         return ["start_dim": PythonObject(startDim),
@@ -191,10 +193,12 @@ public struct Flatten: Module {
 }
 
 /// Main linear module
-struct Linear: WeightedModule {
-    var bias: Tensor? = nil
+public struct Linear: WeightedModule {
+    public typealias DataParallelModuleType = DataParalleledModule<Linear>
     
-    var stateDict: [String : PythonObject?] { get {
+    public var bias: Tensor? = nil
+    
+    public var stateDict: [String : PythonObject?] { get {
         return ["bias": bias != nil ? PythonObject(bias) : nil,
                 "weight": PythonObject(weight)]
     } set {
@@ -202,9 +206,9 @@ struct Linear: WeightedModule {
         self.weight = Tensor(newValue["weight"]!!)
     }}
     
-    var weight: Tensor
+    public var weight: Tensor
     
-    init(_ file: URL) {
+    public init(_ file: URL) {
         // load convolutional layers
         let linear: [String: PythonObject?] = Dictionary(torch.load(file.absoluteString))!
         self.bias = linear["bias"] != nil ? Tensor(linear["bias"]!!) : nil
@@ -216,7 +220,7 @@ struct Linear: WeightedModule {
     ///   - inFeatures: An `Int` of input features
     ///   - outFeatures: An `Int` of output features
     ///   - bias: A `Bool` flag of if using bias
-    init(inFeatures: Int, outFeatures: Int, bias: Bool = true) {
+    public init(inFeatures: Int, outFeatures: Int, bias: Bool = true) {
         // initialize bias
         if bias == true {
             self.bias = Tensor(Parameter(torch.empty(outFeatures)))
@@ -226,22 +230,22 @@ struct Linear: WeightedModule {
         self.weight = Tensor(Parameter(torch.empty([outFeatures, inFeatures])))
     }
     
-    func copy() -> Linear {
+    public func copy() -> Linear {
         var newLinear = Linear(inFeatures: inFeatures, outFeatures: outFeatures, bias: bias != nil)
         newLinear.bias = bias != nil ? Tensor(value: bias) : nil
         newLinear.weight = Tensor(value: weight)
         return newLinear
     }
     
-    func eval() {
+    public func eval() {
         return
     }
     
-    func forward(_ x: Tensor) -> Tensor {
+    public func forward(_ x: Tensor) -> Tensor {
         return Tensor(F.linear(x, weight, bias))
     }
     
-    func train() {
+    public func train() {
         return
     }
     
@@ -259,24 +263,24 @@ struct Linear: WeightedModule {
         return PyModule(m)!
     }
     
-    func save(_ file: URL) {
+    public func save(_ file: URL) {
         torch.save(stateDict, file.absoluteString)
     }
 }
 
 /// Possible errors occured in modules
-enum ModuleError: Error {
+public enum ModuleError: Error {
     case invalidGroups
 }
 
 /// Supported padding methods
-enum Padding: String {
+public enum Padding: String {
     case valid = "valid"
     case same = "same"
 }
 
 /// A module with bias and weight
-protocol WeightedModule: DataParallelable, DeviceMovable, Module {
+public protocol WeightedModule: DataParallelable, DeviceMovable, Module {
     /// The bias `Tensor`
     var bias: Tensor? { get set }
     
@@ -284,7 +288,7 @@ protocol WeightedModule: DataParallelable, DeviceMovable, Module {
     var weight: Tensor { get set }
 }
 
-extension WeightedModule {
+public extension WeightedModule {
     /// Number of input features
     var inFeatures: Int { get {
         return weight.shape[1]
