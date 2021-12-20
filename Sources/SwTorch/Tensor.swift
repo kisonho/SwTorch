@@ -85,6 +85,10 @@ public struct Tensor {
         self.tensorPtr.backward(gradient, retain_graph: retainGraph, create_graph: createGraph, inputs: inputs)
     }
     
+    public func clone() -> Tensor {
+        return Tensor(tensorPtr.clone())
+    }
+    
     /// Detach current tensor
     public mutating func detach() -> Tensor {
         self.tensorPtr = self.tensorPtr.detach()
