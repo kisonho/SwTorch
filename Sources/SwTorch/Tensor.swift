@@ -85,6 +85,8 @@ public struct Tensor {
         self.tensorPtr.backward(gradient, retain_graph: retainGraph, create_graph: createGraph, inputs: inputs)
     }
     
+    /// Clones the current `Tensor`
+    /// - Returns: A new `Tensor` that has exactly the same value and type as current one
     public func clone() -> Tensor {
         return Tensor(tensorPtr.clone())
     }
